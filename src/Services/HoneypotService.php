@@ -1,6 +1,6 @@
 <?php
 
-namespace Darvis\LivewireHoneypot\Services;
+namespace Blendbyte\LivewireHoneypot\Services;
 
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;

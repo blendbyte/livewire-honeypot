@@ -1,6 +1,6 @@
 <?php
 
-use Darvis\LivewireHoneypot\Traits\HasHoneypot;
+use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 use Livewire\Component;
 use Livewire\Livewire;
 

@@ -1,5 +1,5 @@
 <?php
 
-use Darvis\LivewireHoneypot\Tests\TestCase;
+use Blendbyte\LivewireHoneypot\Tests\TestCase;
 
 uses(TestCase::class)->in(__DIR__);

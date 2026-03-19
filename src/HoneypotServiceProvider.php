@@ -1,6 +1,6 @@
 <?php
 
-namespace Darvis\LivewireHoneypot;
+namespace Blendbyte\LivewireHoneypot;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;

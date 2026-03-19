@@ -1,21 +1,23 @@
-# darvis/livewire-honeypot
+# livewire-honeypot
 
-Lightweight **honeypot + time‑trap** protection for **Livewire 3** (Laravel 11).  
+Lightweight **honeypot + time‑trap** protection for **Livewire 4** (Laravel 13).  
 Blocks simple bots without CAPTCHAs, privacy‑friendly and unobtrusive.
+
+Forked from [darvis/livewire-honeypot](https://github.com/darvis/livewire-honeypot)
 
 ## Features
 - 🪤 Honeypot bait field (`present|size:0`)
 - ⏱️ Time‑trap (minimum fill time, default 5 seconds)
 - 🧩 Works as **Trait** for Livewire and as **Service** for controllers/APIs
 - 🧱 Blade component `<x-honeypot />` for easy inclusion
-- 🌍 Multilingual (English & Dutch included)
+- 🌍 Multilingual (English, Dutch & German included)
 - ⚙️ Fully configurable via config file
-- 🔌 Zero dependencies beyond Livewire 3 / Laravel 11
+- 🔌 Zero dependencies beyond Livewire 4 / Laravel 13
 
 ## Installation
 
 ```bash
-composer require darvis/livewire-honeypot
+composer require blendbyte/livewire-honeypot
 ```
 
 (For local development, you can add a `path` repository in your app's `composer.json`.)
@@ -25,7 +27,7 @@ composer require darvis/livewire-honeypot
 1) In your Livewire component:
 
 ```php
-use Darvis\LivewireHoneypot\Traits\HasHoneypot;
+use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 
 class ContactForm extends Component
 {
@@ -62,7 +64,7 @@ class ContactForm extends Component
 ## Usage — Controller / API (Service)
 
 ```php
-use Darvis\LivewireHoneypot\Services\HoneypotService;
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 
 public function store(Request $request, HoneypotService $honeypot)
 {
@@ -74,7 +76,7 @@ public function store(Request $request, HoneypotService $honeypot)
 To generate fields server‑side (non‑Livewire forms):
 
 ```php
-$hp = app(Darvis\LivewireHoneypot\Services\HoneypotService::class)->generate();
+$hp = app(Blendbyte\LivewireHoneypot\Services\HoneypotService::class)->generate();
 // pass $hp to your view to prefill hidden inputs
 ```
 
@@ -104,7 +106,7 @@ HONEYPOT_TOKEN_LENGTH=24
 
 ## Translations
 
-The package includes English and Dutch translations. Publish them to customize error messages:
+The package includes English, Dutch and German translations. Publish them to customize error messages:
 
 ```bash
 php artisan vendor:publish --tag=livewire-honeypot-translations
@@ -130,6 +132,3 @@ Add request rate‑limiting on your form route:
 ```php
 Route::get('/contact', \App\Livewire\ContactForm::class)->middleware('throttle:10,1');
 ```
-
-## License
-MIT © Arvid de Jong (info@arvid.nl)

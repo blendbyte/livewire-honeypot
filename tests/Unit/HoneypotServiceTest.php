@@ -1,6 +1,6 @@
 <?php
 
-use Darvis\LivewireHoneypot\Services\HoneypotService;
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {

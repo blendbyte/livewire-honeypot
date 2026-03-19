@@ -1,8 +1,8 @@
 <?php
 
-namespace Darvis\LivewireHoneypot\Tests;
+namespace Blendbyte\LivewireHoneypot\Tests;
 
-use Darvis\LivewireHoneypot\HoneypotServiceProvider;
+use Blendbyte\LivewireHoneypot\HoneypotServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
