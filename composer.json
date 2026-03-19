@@ -21,7 +21,7 @@
         }
     },
     "require": {
-        "php": "^8.2",
+        "php": "^8.5",
         "laravel/framework": "^13.0",
         "livewire/livewire": "^4.0"
     },
