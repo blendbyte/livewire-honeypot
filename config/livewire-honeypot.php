@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'minimum_fill_seconds' => env('HONEYPOT_MINIMUM_FILL_SECONDS', 5),
+    'minimum_fill_seconds' => (int) env('HONEYPOT_MINIMUM_FILL_SECONDS', 5),
 
     /*
     |--------------------------------------------------------------------------
@@ -37,7 +37,7 @@ return [
     |
     */
 
-    'token_min_length' => env('HONEYPOT_TOKEN_MIN_LENGTH', 10),
+    'token_min_length' => (int) env('HONEYPOT_TOKEN_MIN_LENGTH', 10),
 
     /*
     |--------------------------------------------------------------------------
@@ -48,6 +48,6 @@ return [
     |
     */
 
-    'token_length' => env('HONEYPOT_TOKEN_LENGTH', 24),
+    'token_length' => (int) env('HONEYPOT_TOKEN_LENGTH', 24),
 
 ];

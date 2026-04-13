@@ -61,22 +61,24 @@ test('it passes when minimum_fill_seconds config is zero', function () {
 // ---------------------------------------------------------------------------
 
 test('it fails when honeypot field is filled', function () {
+    $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
-    $component->set('hp_website', 'https://spam.com');
+    $component->set($fieldName, 'https://spam.com');
     $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
     $component->call('submit');
 
-    $component->assertHasErrors(['hp_website' => 'size']);
+    $component->assertHasErrors([$fieldName => 'size']);
 });
 
 test('spam detection error message is correct', function () {
+    $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
-    $component->set('hp_website', 'spam');
+    $component->set($fieldName, 'spam');
     $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
     $component->call('submit');
 
-    $component->assertHasErrors('hp_website');
-    expect($component->errors()->first('hp_website'))->toBe('Spam detected.');
+    $component->assertHasErrors($fieldName);
+    expect($component->errors()->first($fieldName))->toBe('Spam detected.');
 });
 
 test('it uses configured field_name for validation', function () {
@@ -95,17 +97,19 @@ test('it uses configured field_name for validation', function () {
 // ---------------------------------------------------------------------------
 
 test('it fails when submitted too quickly', function () {
+    $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
     $component->call('submit');
 
-    $component->assertHasErrors('hp_website');
+    $component->assertHasErrors($fieldName);
 });
 
 test('time-trap error message is correct', function () {
+    $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
     $component->call('submit');
 
-    expect($component->errors()->first('hp_website'))->toBe('Form submitted too quickly.');
+    expect($component->errors()->first($fieldName))->toBe('Form submitted too quickly.');
 });
 
 test('it uses configured field_name for time-trap error', function () {
