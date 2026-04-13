@@ -2,6 +2,7 @@
 
 namespace Blendbyte\LivewireHoneypot\Traits;
 
+use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -43,20 +44,43 @@ trait HasHoneypot
         $minimumFillSeconds = $minimumSeconds ?? config('livewire-honeypot.minimum_fill_seconds', 5);
         $now = now()->getTimestamp();
 
-        // Require presence & emptiness of the bait field, plus meta fields
-        $this->validate([
-            $fieldName => 'present|size:0',
-            'hp_started_at' => ['required', 'integer', 'min:' . ($now - 3600), 'max:' . $now],
-            'hp_token' => "required|string|min:{$tokenMinLength}",
-        ], [
-            "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
-            'hp_started_at.min' => __('livewire-honeypot::validation.invalid_form_data'),
-            'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
-        ]);
+        try {
+            // Require presence & emptiness of the bait field, plus meta fields
+            $this->validate([
+                $fieldName => 'present|size:0',
+                'hp_started_at' => ['required', 'integer', 'min:' . ($now - 3600), 'max:' . $now],
+                'hp_token' => "required|string|min:{$tokenMinLength}",
+            ], [
+                "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
+                'hp_started_at.min' => __('livewire-honeypot::validation.invalid_form_data'),
+                'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
+            ]);
+        } catch (ValidationException $e) {
+            $errors = $e->errors();
+            $reason = isset($errors[$fieldName]) ? 'honeypot_filled' : 'invalid_form_data';
+
+            event(new HoneypotDetected(
+                fieldName: $fieldName,
+                reason: $reason,
+                ipAddress: request()?->ip(),
+                userAgent: request()?->userAgent(),
+                component: static::class,
+            ));
+
+            throw $e;
+        }
 
         // Time-trap: minimum time spent before submit
         $elapsed = $now - (int) $this->hp_started_at;
         if ($elapsed < $minimumFillSeconds) {
+            event(new HoneypotDetected(
+                fieldName: $fieldName,
+                reason: 'submitted_too_quickly',
+                ipAddress: request()?->ip(),
+                userAgent: request()?->userAgent(),
+                component: static::class,
+            ));
+
             throw ValidationException::withMessages([
                 $fieldName => __('livewire-honeypot::validation.submitted_too_quickly'),
             ]);
