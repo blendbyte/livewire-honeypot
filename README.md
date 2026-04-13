@@ -20,7 +20,7 @@ Forked from [darvis/livewire-honeypot](https://github.com/darvis/livewire-honeyp
 - **Livewire Trait** — drop-in protection for any Livewire component
 - **Controller / API Service** — use outside of Livewire for standard form controllers
 - **Blade component** — `<x-honeypot />` renders all hidden fields in one line
-- **Multilingual** — English, Dutch, and German translations included
+- **Multilingual** — 12 translations included: English, Dutch, German, Spanish, French, Portuguese, Italian, Russian, Polish, Japanese, Chinese Simplified, and Chinese Traditional
 - **Fully configurable** — all settings available via config file or environment variables
 - **Zero extra dependencies** — only requires Livewire 4 / Laravel 13
 
@@ -225,7 +225,7 @@ return [
 
 ## Translations
 
-English, Dutch (`nl`), and German (`de`) translations are included. Publish them to customize the error messages:
+12 translations are included out of the box: English (`en`), Dutch (`nl`), German (`de`), Spanish (`es`), French (`fr`), Portuguese (`pt`), Italian (`it`), Russian (`ru`), Polish (`pl`), Japanese (`ja`), Chinese Simplified (`zh`), and Chinese Traditional (`zh-TW`). Publish them to customize the error messages:
 
 ```bash
 php artisan vendor:publish --tag=livewire-honeypot-translations
