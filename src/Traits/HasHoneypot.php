@@ -2,6 +2,7 @@
 
 namespace Blendbyte\LivewireHoneypot\Traits;
 
+use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Support\Str;
@@ -119,9 +120,9 @@ trait HasHoneypot
                 component: static::class,
             ));
 
-            throw ValidationException::withMessages([
-                $fieldName => __('livewire-honeypot::validation.submitted_too_quickly'),
-            ]);
+            /** @var SpamResponder $responder */
+            $responder = app(SpamResponder::class);
+            $responder->respond($fieldName, __('livewire-honeypot::validation.submitted_too_quickly'));
         }
     }
 }

@@ -16,6 +16,14 @@ class HoneypotServiceProvider extends ServiceProvider
             __DIR__ . '/../config/livewire-honeypot.php',
             'livewire-honeypot'
         );
+
+        $this->app->bind(
+            \Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class,
+            static fn () => app(config(
+                'livewire-honeypot.spam_responder',
+                \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class
+            ))
+        );
     }
 
     public function boot(): void

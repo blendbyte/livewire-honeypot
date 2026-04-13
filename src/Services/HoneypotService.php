@@ -80,6 +80,14 @@ class HoneypotService
                 userAgent: request()->userAgent(),
             ));
 
+            if ($reason === 'honeypot_filled') {
+                $message = $errors[$fieldName][0];
+
+                /** @var \Blendbyte\LivewireHoneypot\Contracts\SpamResponder $responder */
+                $responder = app(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
+                $responder->respond($fieldName, $message);
+            }
+
             throw $e;
         }
 
@@ -92,9 +100,9 @@ class HoneypotService
                 userAgent: request()->userAgent(),
             ));
 
-            throw ValidationException::withMessages([
-                $fieldName => __('livewire-honeypot::validation.submitted_too_quickly'),
-            ]);
+            /** @var \Blendbyte\LivewireHoneypot\Contracts\SpamResponder $responder */
+            $responder = app(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
+            $responder->respond($fieldName, __('livewire-honeypot::validation.submitted_too_quickly'));
         }
     }
 }
