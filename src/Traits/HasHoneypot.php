@@ -17,13 +17,14 @@ trait HasHoneypot
     public string $hp_field_name = '';
     public int $hp_started_at = 0;
     public string $hp_token = '';
+    public string $hp_js = '';
 
     /**
      * Override this method in your component to customise honeypot settings
      * for that component without touching the global config.
      *
      * Supported keys: minimum_fill_seconds, field_name, token_length,
-     *                 token_min_length, randomize_field_name
+     *                 token_min_length, randomize_field_name, require_js_verification
      *
      * Example:
      *   protected function honeypotConfig(): array
@@ -66,6 +67,7 @@ trait HasHoneypot
         $this->$fieldName = '';
         $this->hp_started_at = now()->getTimestamp();
         $this->hp_token = Str::random((int) $this->getHoneypotConfig('token_length', 24));
+        $this->hp_js = '';
 
         $this->hp_field_name = (bool) $this->getHoneypotConfig('randomize_field_name', false)
             ? 'hp_' . Str::lower(Str::random(6))
@@ -107,6 +109,21 @@ trait HasHoneypot
             ));
 
             throw $e;
+        }
+
+        // JS verification: field must be populated by Alpine.js on page load
+        if ((bool) $this->getHoneypotConfig('require_js_verification', false) && trim($this->hp_js) === '') {
+            event(new HoneypotDetected(
+                fieldName: $fieldName,
+                reason: 'js_verification_failed',
+                ipAddress: request()->ip(),
+                userAgent: request()->userAgent(),
+                component: static::class,
+            ));
+
+            /** @var SpamResponder $responder */
+            $responder = app(SpamResponder::class);
+            $responder->respond($fieldName, __('livewire-honeypot::validation.js_verification_failed'));
         }
 
         // Time-trap: minimum time spent before submit

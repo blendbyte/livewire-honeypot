@@ -101,4 +101,21 @@ return [
 
     'spam_responder' => \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class,
 
+    /*
+    |--------------------------------------------------------------------------
+    | JavaScript Fill Verification
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, the Blade component renders a hidden field that is only
+    | populated by Alpine.js (bundled with Livewire 4). Headless bots or
+    | form scrapers that submit without executing JavaScript will fail this
+    | check because the field will be empty.
+    |
+    | This is an opt-in layer on top of the existing honeypot and time-trap.
+    | Set to true to enable.
+    |
+    */
+
+    'require_js_verification' => (bool) env('HONEYPOT_JS_VERIFICATION', false),
+
 ];

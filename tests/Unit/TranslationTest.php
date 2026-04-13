@@ -274,3 +274,79 @@ test('zh-TW: honeypot_label', function () {
 
     expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('網站（請留空）');
 });
+
+// ---------------------------------------------------------------------------
+// js_verification_failed — spot-check across locales
+// ---------------------------------------------------------------------------
+
+test('en: js_verification_failed', function () {
+    app()->setLocale('en');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('JavaScript verification failed.');
+});
+
+test('de: js_verification_failed', function () {
+    app()->setLocale('de');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('JavaScript-Überprüfung fehlgeschlagen.');
+});
+
+test('nl: js_verification_failed', function () {
+    app()->setLocale('nl');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('JavaScript-verificatie mislukt.');
+});
+
+test('es: js_verification_failed', function () {
+    app()->setLocale('es');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('Verificación de JavaScript fallida.');
+});
+
+test('fr: js_verification_failed', function () {
+    app()->setLocale('fr');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('Échec de la vérification JavaScript.');
+});
+
+test('pt: js_verification_failed', function () {
+    app()->setLocale('pt');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('Falha na verificação de JavaScript.');
+});
+
+test('it_locale: js_verification_failed', function () {
+    app()->setLocale('it');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('Verifica JavaScript non riuscita.');
+});
+
+test('ru: js_verification_failed', function () {
+    app()->setLocale('ru');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('Проверка JavaScript не пройдена.');
+});
+
+test('pl: js_verification_failed', function () {
+    app()->setLocale('pl');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('Weryfikacja JavaScript nie powiodła się.');
+});
+
+test('ja: js_verification_failed', function () {
+    app()->setLocale('ja');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('JavaScriptの検証に失敗しました。');
+});
+
+test('zh: js_verification_failed', function () {
+    app()->setLocale('zh');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('JavaScript验证失败。');
+});
+
+test('zh-TW: js_verification_failed', function () {
+    app()->setLocale('zh-TW');
+
+    expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('JavaScript驗證失敗。');
+});

@@ -19,9 +19,10 @@ test('it merges the package config', function () {
     expect(config('livewire-honeypot.randomize_field_name'))->toBeBool();
     expect(config('livewire-honeypot.logging'))->toBeArray();
     expect(config('livewire-honeypot.spam_responder'))->toBeString();
+    expect(config('livewire-honeypot.require_js_verification'))->toBeBool();
 });
 
-test('it registers all seven config keys', function () {
+test('it registers all eight config keys', function () {
     $config = config('livewire-honeypot');
 
     expect($config)->toBeArray()
@@ -31,7 +32,8 @@ test('it registers all seven config keys', function () {
         ->toHaveKey('token_length')
         ->toHaveKey('randomize_field_name')
         ->toHaveKey('logging')
-        ->toHaveKey('spam_responder');
+        ->toHaveKey('spam_responder')
+        ->toHaveKey('require_js_verification');
 });
 
 test('it binds SpamResponder in the container', function () {
