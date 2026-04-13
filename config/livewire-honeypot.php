@@ -84,4 +84,21 @@ return [
         'level'   => env('HONEYPOT_LOG_LEVEL', 'warning'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Spam Responder
+    |--------------------------------------------------------------------------
+    |
+    | The class to use when spam is detected. Must implement
+    | Blendbyte\LivewireHoneypot\Contracts\SpamResponder.
+    |
+    | Built-in options:
+    |   - ValidationExceptionResponder::class  (default) field-level error
+    |   - AbortResponder::class                abort(403)
+    |   - RedirectResponder::class             redirect()->back() silently
+    |
+    */
+
+    'spam_responder' => \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class,
+
 ];
