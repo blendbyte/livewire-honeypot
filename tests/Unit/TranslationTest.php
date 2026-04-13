@@ -252,3 +252,25 @@ test('zh: honeypot_label', function () {
 
     expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('网站（请留空）');
 });
+
+// ---------------------------------------------------------------------------
+// Chinese Traditional (zh-TW)
+// ---------------------------------------------------------------------------
+
+test('zh-TW: spam_detected', function () {
+    app()->setLocale('zh-TW');
+
+    expect(__('livewire-honeypot::validation.spam_detected'))->toBe('偵測到垃圾郵件。');
+});
+
+test('zh-TW: submitted_too_quickly', function () {
+    app()->setLocale('zh-TW');
+
+    expect(__('livewire-honeypot::validation.submitted_too_quickly'))->toBe('表單提交過快。');
+});
+
+test('zh-TW: honeypot_label', function () {
+    app()->setLocale('zh-TW');
+
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('網站（請留空）');
+});
