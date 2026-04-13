@@ -4,7 +4,8 @@ use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
-    $this->service = new HoneypotService();
+    $this->service   = new HoneypotService();
+    $this->fieldName = config('livewire-honeypot.field_name', 'hp_website');
 });
 
 // ---------------------------------------------------------------------------
@@ -15,11 +16,11 @@ test('it generates honeypot fields', function () {
     $fields = $this->service->generate();
 
     expect($fields)->toBeArray()
-        ->toHaveKey('hp_website')
+        ->toHaveKey($this->fieldName)
         ->toHaveKey('hp_started_at')
         ->toHaveKey('hp_token');
 
-    expect($fields['hp_website'])->toBe('');
+    expect($fields[$this->fieldName])->toBe('');
     expect($fields['hp_started_at'])->toBeInt();
     expect($fields['hp_token'])->toBeString()->toHaveLength(24);
 });
@@ -57,7 +58,7 @@ test('it uses configured field_name in generate', function () {
 
 test('it validates valid honeypot data', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -69,7 +70,7 @@ test('it validates valid honeypot data', function () {
 
 test('it respects custom minimum seconds parameter', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->subSeconds(2)->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -83,7 +84,7 @@ test('it passes when minimum_fill_seconds is zero via config', function () {
     config(['livewire-honeypot.minimum_fill_seconds' => 0]);
 
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -95,7 +96,7 @@ test('it passes when minimum_fill_seconds is zero via config', function () {
 
 test('it passes when minimum_fill_seconds is zero via parameter', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -111,7 +112,7 @@ test('it passes when minimum_fill_seconds is zero via parameter', function () {
 
 test('it fails when honeypot field is filled', function () {
     $data = [
-        'hp_website'    => 'https://spam.com',
+        $this->fieldName => 'https://spam.com',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -146,7 +147,7 @@ test('it uses configured field_name in validate', function () {
 
 test('it fails when hp_started_at is zero', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => 0,
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -156,7 +157,7 @@ test('it fails when hp_started_at is zero', function () {
 
 test('it fails when submitted too quickly', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -166,7 +167,7 @@ test('it fails when submitted too quickly', function () {
 
 test('it fails when hp_started_at is in the future', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->addMinutes(5)->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -176,7 +177,7 @@ test('it fails when hp_started_at is in the future', function () {
 
 test('it fails when hp_started_at is too old', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->subHours(2)->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -186,7 +187,7 @@ test('it fails when hp_started_at is too old', function () {
 
 test('it fails when hp_started_at is missing', function () {
     $data = [
-        'hp_website' => '',
+        $this->fieldName => '',
         'hp_token'   => str_repeat('a', 24),
     ];
 
@@ -195,7 +196,7 @@ test('it fails when hp_started_at is missing', function () {
 
 test('it fails when hp_started_at is not an integer', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => 'not-a-timestamp',
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -209,7 +210,7 @@ test('it fails when hp_started_at is not an integer', function () {
 
 test('it fails when token is too short', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
         'hp_token'      => 'short',
     ];
@@ -219,7 +220,7 @@ test('it fails when token is too short', function () {
 
 test('it fails when hp_token is an empty string', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
         'hp_token'      => '',
     ];
@@ -229,7 +230,7 @@ test('it fails when hp_token is an empty string', function () {
 
 test('it fails when hp_token key is missing entirely', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
     ];
 
@@ -240,7 +241,7 @@ test('it respects custom token_min_length config', function () {
     config(['livewire-honeypot.token_min_length' => 15]);
 
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
         'hp_token'      => str_repeat('a', 12),
     ];
@@ -254,7 +255,7 @@ test('it respects custom token_min_length config', function () {
 
 test('it throws spam_detected error on filled honeypot field', function () {
     $data = [
-        'hp_website'    => 'spam',
+        $this->fieldName => 'spam',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -265,7 +266,7 @@ test('it throws spam_detected error on filled honeypot field', function () {
 
 test('it throws submitted_too_quickly error on time-trap', function () {
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -278,7 +279,7 @@ test('it translates spam_detected to Dutch', function () {
     app()->setLocale('nl');
 
     $data = [
-        'hp_website'    => 'spam',
+        $this->fieldName => 'spam',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -291,7 +292,7 @@ test('it translates submitted_too_quickly to Dutch', function () {
     app()->setLocale('nl');
 
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -304,7 +305,7 @@ test('it translates spam_detected to German', function () {
     app()->setLocale('de');
 
     $data = [
-        'hp_website'    => 'spam',
+        $this->fieldName => 'spam',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
@@ -317,7 +318,7 @@ test('it translates submitted_too_quickly to German', function () {
     app()->setLocale('de');
 
     $data = [
-        'hp_website'    => '',
+        $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
