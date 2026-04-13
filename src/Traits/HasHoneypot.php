@@ -32,18 +32,21 @@ trait HasHoneypot
         $fieldName = config('livewire-honeypot.field_name', 'hp_website');
         $tokenMinLength = config('livewire-honeypot.token_min_length', 10);
         $minimumFillSeconds = config('livewire-honeypot.minimum_fill_seconds', 5);
+        $now = now()->getTimestamp();
 
         // Require presence & emptiness of the bait field, plus meta fields
         $this->validate([
             $fieldName => 'present|size:0',
-            'hp_started_at' => 'required|integer',
+            'hp_started_at' => ['required', 'integer', 'min:' . ($now - 3600), 'max:' . $now],
             'hp_token' => "required|string|min:{$tokenMinLength}",
         ], [
             "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
+            'hp_started_at.min' => __('livewire-honeypot::validation.invalid_form_data'),
+            'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
         ]);
 
         // Time-trap: minimum time spent before submit
-        $elapsed = now()->getTimestamp() - (int) $this->hp_started_at;
+        $elapsed = $now - (int) $this->hp_started_at;
         if ($elapsed < $minimumFillSeconds) {
             throw ValidationException::withMessages([
                 $fieldName => __('livewire-honeypot::validation.submitted_too_quickly'),
