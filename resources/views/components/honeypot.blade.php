@@ -1,10 +1,11 @@
 {{-- Anonymous honeypot component. Usage: <x-honeypot /> --}}
+@php $fieldName = config('livewire-honeypot.field_name', 'hp_website'); @endphp
 <div class="hp-field" aria-hidden="true">
     <label>
         <span>{{ __('livewire-honeypot::validation.honeypot_label') }}</span>
         <input type="text"
-               name="hp_website"
-               {{ $attributes->whereStartsWith('wire:model')->first() ? '' : 'wire:model.lazy=hp_website' }}
+               name="{{ $fieldName }}"
+               {{ $attributes->whereStartsWith('wire:model')->first() ? '' : "wire:model.lazy={$fieldName}" }}
                tabindex="-1"
                autocomplete="off" />
     </label>

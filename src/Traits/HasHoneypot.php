@@ -5,6 +5,9 @@ namespace Blendbyte\LivewireHoneypot\Traits;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @phpstan-require-extends \Livewire\Component
+ */
 trait HasHoneypot
 {
     public string $hp_website = '';
@@ -13,12 +16,22 @@ trait HasHoneypot
 
     public function mountHasHoneypot(): void
     {
+        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+
+        if ($fieldName !== 'hp_website' && ! property_exists($this, $fieldName)) {
+            throw new \LogicException(
+                'LivewireHoneypot: The configured field_name "' . $fieldName . '" is not declared as a public ' .
+                'property on ' . static::class . '. Add `public string $' . $fieldName . " = '';` to your component."
+            );
+        }
+
         $this->resetHoneypot();
     }
 
     protected function resetHoneypot(): void
     {
-        $this->hp_website = '';
+        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+        $this->$fieldName = '';
         $this->hp_started_at = now()->getTimestamp();
         $this->hp_token = Str::random(config('livewire-honeypot.token_length', 24));
     }
@@ -28,21 +41,24 @@ trait HasHoneypot
         $fieldName = config('livewire-honeypot.field_name', 'hp_website');
         $tokenMinLength = config('livewire-honeypot.token_min_length', 10);
         $minimumFillSeconds = config('livewire-honeypot.minimum_fill_seconds', 5);
+        $now = now()->getTimestamp();
 
         // Require presence & emptiness of the bait field, plus meta fields
         $this->validate([
-            'hp_website' => 'present|size:0',
-            'hp_started_at' => 'required|integer',
+            $fieldName => 'present|size:0',
+            'hp_started_at' => ['required', 'integer', 'min:' . ($now - 3600), 'max:' . $now],
             'hp_token' => "required|string|min:{$tokenMinLength}",
         ], [
-            'hp_website.size' => __('livewire-honeypot::validation.spam_detected'),
+            "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
+            'hp_started_at.min' => __('livewire-honeypot::validation.invalid_form_data'),
+            'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
         ]);
 
         // Time-trap: minimum time spent before submit
-        $elapsed = now()->getTimestamp() - (int) $this->hp_started_at;
+        $elapsed = $now - (int) $this->hp_started_at;
         if ($elapsed < $minimumFillSeconds) {
             throw ValidationException::withMessages([
-                'hp_website' => __('livewire-honeypot::validation.submitted_too_quickly'),
+                $fieldName => __('livewire-honeypot::validation.submitted_too_quickly'),
             ]);
         }
     }

@@ -9,8 +9,10 @@ class HoneypotService
 {
     public function generate(): array
     {
+        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+
         return [
-            'hp_website' => '',
+            $fieldName => '',
             'hp_started_at' => now()->getTimestamp(),
             'hp_token' => Str::random(config('livewire-honeypot.token_length', 24)),
         ];
@@ -18,21 +20,25 @@ class HoneypotService
 
     public function validate(array $data, ?int $minimumSeconds = null): void
     {
+        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
         $minimumSeconds = $minimumSeconds ?? config('livewire-honeypot.minimum_fill_seconds', 5);
         $tokenMinLength = config('livewire-honeypot.token_min_length', 10);
+        $now = now()->getTimestamp();
 
         validator($data, [
-            'hp_website' => 'present|size:0',
-            'hp_started_at' => 'required|integer',
+            $fieldName => 'present|size:0',
+            'hp_started_at' => ['required', 'integer', 'min:' . ($now - 3600), 'max:' . $now],
             'hp_token' => "required|string|min:{$tokenMinLength}",
         ], [
-            'hp_website.size' => __('livewire-honeypot::validation.spam_detected'),
+            "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
+            'hp_started_at.min' => __('livewire-honeypot::validation.invalid_form_data'),
+            'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
         ])->validate();
 
-        $elapsed = now()->getTimestamp() - (int)($data['hp_started_at'] ?? 0);
+        $elapsed = $now - (int) $data['hp_started_at'];
         if ($elapsed < $minimumSeconds) {
             throw ValidationException::withMessages([
-                'hp_website' => __('livewire-honeypot::validation.submitted_too_quickly'),
+                $fieldName => __('livewire-honeypot::validation.submitted_too_quickly'),
             ]);
         }
     }
