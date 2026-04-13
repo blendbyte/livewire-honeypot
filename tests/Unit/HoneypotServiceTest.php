@@ -144,6 +144,16 @@ test('it uses configured field_name in validate', function () {
 // validate() — time-trap
 // ---------------------------------------------------------------------------
 
+test('it fails when hp_started_at is zero', function () {
+    $data = [
+        'hp_website'    => '',
+        'hp_started_at' => 0,
+        'hp_token'      => str_repeat('a', 24),
+    ];
+
+    $this->service->validate($data);
+})->throws(ValidationException::class);
+
 test('it fails when submitted too quickly', function () {
     $data = [
         'hp_website'    => '',
@@ -158,6 +168,16 @@ test('it fails when hp_started_at is in the future', function () {
     $data = [
         'hp_website'    => '',
         'hp_started_at' => now()->addMinutes(5)->getTimestamp(),
+        'hp_token'      => str_repeat('a', 24),
+    ];
+
+    $this->service->validate($data);
+})->throws(ValidationException::class);
+
+test('it fails when hp_started_at is too old', function () {
+    $data = [
+        'hp_website'    => '',
+        'hp_started_at' => now()->subHours(2)->getTimestamp(),
         'hp_token'      => str_repeat('a', 24),
     ];
 
