@@ -61,22 +61,24 @@ test('it passes when minimum_fill_seconds config is zero', function () {
 // ---------------------------------------------------------------------------
 
 test('it fails when honeypot field is filled', function () {
+    $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
-    $component->set('hp_website', 'https://spam.com');
+    $component->set($fieldName, 'https://spam.com');
     $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
     $component->call('submit');
 
-    $component->assertHasErrors(['hp_website' => 'size']);
+    $component->assertHasErrors([$fieldName => 'size']);
 });
 
 test('spam detection error message is correct', function () {
+    $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
-    $component->set('hp_website', 'spam');
+    $component->set($fieldName, 'spam');
     $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
     $component->call('submit');
 
-    $component->assertHasErrors('hp_website');
-    expect($component->errors()->first('hp_website'))->toBe('Spam detected.');
+    $component->assertHasErrors($fieldName);
+    expect($component->errors()->first($fieldName))->toBe('Spam detected.');
 });
 
 test('it uses configured field_name for validation', function () {
@@ -95,17 +97,19 @@ test('it uses configured field_name for validation', function () {
 // ---------------------------------------------------------------------------
 
 test('it fails when submitted too quickly', function () {
+    $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
     $component->call('submit');
 
-    $component->assertHasErrors('hp_website');
+    $component->assertHasErrors($fieldName);
 });
 
 test('time-trap error message is correct', function () {
+    $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
     $component->call('submit');
 
-    expect($component->errors()->first('hp_website'))->toBe('Form submitted too quickly.');
+    expect($component->errors()->first($fieldName))->toBe('Form submitted too quickly.');
 });
 
 test('it uses configured field_name for time-trap error', function () {
@@ -115,6 +119,29 @@ test('it uses configured field_name for time-trap error', function () {
     $component->call('submit');
 
     $component->assertHasErrors('my_trap');
+});
+
+test('it respects a custom minimum seconds parameter', function () {
+    $component = Livewire::test(TestComponent::class);
+
+    // Set hp_started_at to 2 seconds ago — would fail the default 5s check
+    $component->set('hp_started_at', now()->subSeconds(2)->getTimestamp());
+
+    // But passes when we override minimum to 1 second
+    config(['livewire-honeypot.minimum_fill_seconds' => 99]); // ensure config is NOT used
+    $component->call('submitWithMinimum', 1);
+
+    $component->assertHasNoErrors();
+});
+
+test('it still fails when custom minimum seconds is not met', function () {
+    $component = Livewire::test(TestComponent::class);
+
+    $component->set('hp_started_at', now()->subSeconds(2)->getTimestamp());
+
+    $component->call('submitWithMinimum', 10); // require 10s but only 2s elapsed
+
+    $component->assertHasErrors();
 });
 
 // ---------------------------------------------------------------------------
@@ -181,7 +208,8 @@ test('it throws LogicException when custom field_name property is not declared',
     config(['livewire-honeypot.field_name' => 'my_trap']);
 
     Livewire::test(TestComponent::class);
-})->throws(\LogicException::class, 'my_trap');
+    // Livewire wraps mount exceptions in ViewException; the original LogicException message is preserved
+})->throws(\Illuminate\View\ViewException::class, 'my_trap');
 
 test('it works with a custom field_name when property is declared', function () {
     config(['livewire-honeypot.field_name' => 'my_trap']);
@@ -203,6 +231,12 @@ class TestComponent extends Component
     public function submit(): void
     {
         $this->validateHoneypot();
+        $this->resetHoneypot();
+    }
+
+    public function submitWithMinimum(int $minimumSeconds): void
+    {
+        $this->validateHoneypot($minimumSeconds);
         $this->resetHoneypot();
     }
 
