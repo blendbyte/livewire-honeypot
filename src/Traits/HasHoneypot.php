@@ -5,6 +5,9 @@ namespace Blendbyte\LivewireHoneypot\Traits;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @phpstan-require-extends \Livewire\Component
+ */
 trait HasHoneypot
 {
     public string $hp_website = '';
