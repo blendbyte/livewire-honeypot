@@ -181,7 +181,8 @@ test('it throws LogicException when custom field_name property is not declared',
     config(['livewire-honeypot.field_name' => 'my_trap']);
 
     Livewire::test(TestComponent::class);
-})->throws(\LogicException::class, 'my_trap');
+    // Livewire wraps mount exceptions in ViewException; the original LogicException message is preserved
+})->throws(\Illuminate\View\ViewException::class, 'my_trap');
 
 test('it works with a custom field_name when property is declared', function () {
     config(['livewire-honeypot.field_name' => 'my_trap']);
