@@ -117,6 +117,29 @@ test('it uses configured field_name for time-trap error', function () {
     $component->assertHasErrors('my_trap');
 });
 
+test('it respects a custom minimum seconds parameter', function () {
+    $component = Livewire::test(TestComponent::class);
+
+    // Set hp_started_at to 2 seconds ago — would fail the default 5s check
+    $component->set('hp_started_at', now()->subSeconds(2)->getTimestamp());
+
+    // But passes when we override minimum to 1 second
+    config(['livewire-honeypot.minimum_fill_seconds' => 99]); // ensure config is NOT used
+    $component->call('submitWithMinimum', 1);
+
+    $component->assertHasNoErrors();
+});
+
+test('it still fails when custom minimum seconds is not met', function () {
+    $component = Livewire::test(TestComponent::class);
+
+    $component->set('hp_started_at', now()->subSeconds(2)->getTimestamp());
+
+    $component->call('submitWithMinimum', 10); // require 10s but only 2s elapsed
+
+    $component->assertHasErrors();
+});
+
 // ---------------------------------------------------------------------------
 // validateHoneypot() — token
 // ---------------------------------------------------------------------------
@@ -204,6 +227,12 @@ class TestComponent extends Component
     public function submit(): void
     {
         $this->validateHoneypot();
+        $this->resetHoneypot();
+    }
+
+    public function submitWithMinimum(int $minimumSeconds): void
+    {
+        $this->validateHoneypot($minimumSeconds);
         $this->resetHoneypot();
     }
 

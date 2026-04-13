@@ -36,11 +36,11 @@ trait HasHoneypot
         $this->hp_token = Str::random(config('livewire-honeypot.token_length', 24));
     }
 
-    protected function validateHoneypot(): void
+    protected function validateHoneypot(?int $minimumSeconds = null): void
     {
         $fieldName = config('livewire-honeypot.field_name', 'hp_website');
         $tokenMinLength = config('livewire-honeypot.token_min_length', 10);
-        $minimumFillSeconds = config('livewire-honeypot.minimum_fill_seconds', 5);
+        $minimumFillSeconds = $minimumSeconds ?? config('livewire-honeypot.minimum_fill_seconds', 5);
         $now = now()->getTimestamp();
 
         // Require presence & emptiness of the bait field, plus meta fields
