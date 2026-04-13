@@ -3,6 +3,7 @@
 namespace Blendbyte\LivewireHoneypot\Traits;
 
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -44,6 +45,10 @@ trait HasHoneypot
 
     protected function validateHoneypot(?int $minimumSeconds = null): void
     {
+        if (HoneypotService::isFake()) {
+            return;
+        }
+
         $fieldName = config('livewire-honeypot.field_name', 'hp_website');
         $tokenMinLength = config('livewire-honeypot.token_min_length', 10);
         $minimumFillSeconds = $minimumSeconds ?? config('livewire-honeypot.minimum_fill_seconds', 5);

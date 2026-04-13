@@ -8,6 +8,35 @@ use Illuminate\Support\Str;
 
 class HoneypotService
 {
+    protected static bool $fake = false;
+
+    /**
+     * Put the honeypot into fake mode: all validation is bypassed.
+     * Call this in your test setUp or at the top of a test.
+     * Remember to call resetFake() afterwards (or use afterEach()).
+     */
+    public static function fake(): void
+    {
+        static::$fake = true;
+    }
+
+    /**
+     * Restore normal validation behaviour.
+     * Call this in your test tearDown or afterEach().
+     */
+    public static function resetFake(): void
+    {
+        static::$fake = false;
+    }
+
+    /**
+     * Returns true if fake mode is active.
+     */
+    public static function isFake(): bool
+    {
+        return static::$fake;
+    }
+
     public function generate(): array
     {
         $fieldName = config('livewire-honeypot.field_name', 'hp_website');
@@ -21,6 +50,10 @@ class HoneypotService
 
     public function validate(array $data, ?int $minimumSeconds = null): void
     {
+        if (static::$fake) {
+            return;
+        }
+
         $fieldName = config('livewire-honeypot.field_name', 'hp_website');
         $minimumSeconds = $minimumSeconds ?? config('livewire-honeypot.minimum_fill_seconds', 5);
         $tokenMinLength = config('livewire-honeypot.token_min_length', 10);
