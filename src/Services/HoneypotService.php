@@ -91,6 +91,20 @@ class HoneypotService
             throw $e;
         }
 
+        // JS verification: field must be populated by Alpine.js on page load
+        if (config('livewire-honeypot.require_js_verification', false) && trim((string) ($data['hp_js'] ?? '')) === '') {
+            event(new HoneypotDetected(
+                fieldName: $fieldName,
+                reason: 'js_verification_failed',
+                ipAddress: request()->ip(),
+                userAgent: request()->userAgent(),
+            ));
+
+            /** @var \Blendbyte\LivewireHoneypot\Contracts\SpamResponder $responder */
+            $responder = app(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
+            $responder->respond($fieldName, __('livewire-honeypot::validation.js_verification_failed'));
+        }
+
         $elapsed = $now - (int) $data['hp_started_at'];
         if ($elapsed < $minimumSeconds) {
             event(new HoneypotDetected(

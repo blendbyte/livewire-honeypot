@@ -27,6 +27,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('livewire-honeypot.randomize_field_name', false);
         $app['config']->set('livewire-honeypot.logging.enabled', false);
         $app['config']->set('livewire-honeypot.spam_responder', \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class);
+        $app['config']->set('livewire-honeypot.require_js_verification', false);
 
         // Setup app key for encryption
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));

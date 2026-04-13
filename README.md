@@ -18,6 +18,7 @@ Forked from [darvis/livewire-honeypot](https://github.com/darvis/livewire-honeyp
 - **Time-trap** — enforces a configurable minimum time between page load and submission
 - **Token validation** — cryptographically random token verified on each submission
 - **Randomized field name** — optionally render the bait field with a random HTML `name` to defeat name-aware bots
+- **JS fill verification** — opt-in hidden field populated only by Alpine.js; blocks headless bots that skip JavaScript
 - **Livewire Trait** — drop-in protection for any Livewire component
 - **Per-component config** — override any honeypot setting per component via `honeypotConfig()`
 - **Controller / API Service** — use outside of Livewire for standard form controllers
@@ -138,7 +139,7 @@ class RegistrationForm extends Component
 }
 ```
 
-Supported keys: `minimum_fill_seconds`, `field_name`, `token_length`, `token_min_length`, `randomize_field_name`.
+Supported keys: `minimum_fill_seconds`, `field_name`, `token_length`, `token_min_length`, `randomize_field_name`, `require_js_verification`.
 
 Component-level values take precedence over the global config; any key not present falls back to the global config.
 
@@ -153,6 +154,29 @@ Pass `$hp_field_name` (automatically kept in sync by the trait) to the Blade com
 ```
 
 The `wire:model` binding is unaffected — only the rendered HTML `name` attribute is randomised.
+
+#### JavaScript fill verification
+
+When `require_js_verification` is enabled, the Blade component renders an additional hidden field (`hp_js`) that is populated client-side by Alpine.js (bundled with Livewire 4) via an `x-init` directive. Bots and headless scrapers that submit forms without executing JavaScript will leave this field empty, and the submission will be rejected.
+
+Enable it globally:
+
+```dotenv
+HONEYPOT_JS_VERIFICATION=true
+```
+
+Or per-component via `honeypotConfig()`:
+
+```php
+protected function honeypotConfig(): array
+{
+    return ['require_js_verification' => true];
+}
+```
+
+No changes to your template are needed — `<x-honeypot />` automatically renders the `hp_js` field when the option is enabled. The field is invisible and uses `wire:model` so Livewire keeps it in sync.
+
+> **Note:** This check requires Alpine.js. Livewire 4 bundles Alpine.js automatically, so no extra setup is needed for Livewire components. For controller/API usage, ensure Alpine.js is loaded on the page.
 
 #### Overriding the minimum time per-action
 
@@ -222,13 +246,14 @@ $honeypot->validate($data, minimumSeconds: 10);
 
 ## Blade Component
 
-The `<x-honeypot />` component renders three hidden fields and scoped CSS that moves them offscreen:
+The `<x-honeypot />` component renders hidden fields and scoped CSS that moves them offscreen:
 
-| Field | Purpose |
-|---|---|
-| `hp_website` (configurable) | Bait field — must remain empty |
-| `hp_started_at` | Unix timestamp of page load |
-| `hp_token` | Random token to verify form origin |
+| Field | Purpose | Always rendered |
+|---|---|---|
+| `hp_website` (configurable) | Bait field — must remain empty | Yes |
+| `hp_started_at` | Unix timestamp of page load | Yes |
+| `hp_token` | Random token to verify form origin | Yes |
+| `hp_js` | Populated by Alpine.js on page load | Only when `require_js_verification = true` |
 
 The component uses `aria-hidden="true"` and `tabindex="-1"` so it is invisible to screen readers and keyboard navigation.
 
@@ -271,6 +296,9 @@ return [
     // How to respond when spam is detected
     // Must implement Blendbyte\LivewireHoneypot\Contracts\SpamResponder
     'spam_responder' => \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class,
+
+    // Require a hidden field populated by Alpine.js (opt-in JS verification)
+    'require_js_verification' => env('HONEYPOT_JS_VERIFICATION', false),
 ];
 ```
 
@@ -286,6 +314,7 @@ return [
 | `HONEYPOT_LOGGING` | `false` | Enable structured log entries on spam detection |
 | `HONEYPOT_LOG_CHANNEL` | _(default)_ | Laravel logging channel to write to (`null` = app default) |
 | `HONEYPOT_LOG_LEVEL` | `warning` | PSR-3 log level (`debug`, `info`, `warning`, `error`, …) |
+| `HONEYPOT_JS_VERIFICATION` | `false` | Require the `hp_js` field to be populated by Alpine.js |
 
 > **Note:** `token_length` must be greater than or equal to `token_min_length`. The service provider throws an `InvalidArgumentException` on boot if this constraint is violated.
 
@@ -354,7 +383,7 @@ Every spam detection fires a `Blendbyte\LivewireHoneypot\Events\HoneypotDetected
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 
 Event::listen(HoneypotDetected::class, function (HoneypotDetected $event) {
-    // $event->reason      — "honeypot_filled" | "submitted_too_quickly" | "invalid_form_data"
+    // $event->reason      — "honeypot_filled" | "submitted_too_quickly" | "invalid_form_data" | "js_verification_failed"
     // $event->fieldName   — the bait field name (e.g. "hp_website")
     // $event->ipAddress   — IP address of the request
     // $event->userAgent   — user-agent string of the request
@@ -440,6 +469,7 @@ This creates files under `lang/vendor/livewire-honeypot/{locale}/validation.php`
 | `submitted_too_quickly` | `Form submitted too quickly.` | Shown when the time-trap triggers |
 | `honeypot_label` | `Website (leave empty)` | Accessible label on the hidden field |
 | `invalid_form_data` | `Invalid form data.` | Shown when `hp_started_at` is out of range |
+| `js_verification_failed` | `JavaScript verification failed.` | Shown when `hp_js` is empty (JS did not run) |
 
 ---
 
@@ -478,6 +508,7 @@ Route::post('/contact', [ContactController::class, 'store'])
    - The bait field is **empty** (bots usually fill every visible and hidden input).
    - `hp_started_at` falls within the last hour (guards against replayed or stale forms).
    - `hp_token` meets the minimum length (guards against manually crafted requests).
+   - If `require_js_verification` is enabled, `hp_js` must be **non-empty** — Alpine.js populates this field on page load; bots without JavaScript execution leave it empty.
    - Enough time has elapsed since page load (time-trap).
 4. Any failure fires a `HoneypotDetected` event (and optionally writes a log entry), then delegates to the configured `SpamResponder` — by default a `ValidationException`, but configurable to a 403 abort, silent redirect, or any custom implementation.
 
