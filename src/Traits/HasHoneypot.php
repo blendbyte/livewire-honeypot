@@ -16,6 +16,15 @@ trait HasHoneypot
 
     public function mountHasHoneypot(): void
     {
+        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+
+        if ($fieldName !== 'hp_website' && ! property_exists($this, $fieldName)) {
+            throw new \LogicException(
+                'LivewireHoneypot: The configured field_name "' . $fieldName . '" is not declared as a public ' .
+                'property on ' . static::class . '. Add `public string $' . $fieldName . " = '';` to your component."
+            );
+        }
+
         $this->resetHoneypot();
     }
 

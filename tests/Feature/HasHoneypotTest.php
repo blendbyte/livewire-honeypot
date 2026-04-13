@@ -174,9 +174,28 @@ test('it generates a new token of the correct length on reset', function () {
 });
 
 // ---------------------------------------------------------------------------
-// Test components
+// mountHasHoneypot() — custom field_name guard
 // ---------------------------------------------------------------------------
 
+test('it throws LogicException when custom field_name property is not declared', function () {
+    config(['livewire-honeypot.field_name' => 'my_trap']);
+
+    Livewire::test(TestComponent::class);
+})->throws(\LogicException::class, 'my_trap');
+
+test('it works with a custom field_name when property is declared', function () {
+    config(['livewire-honeypot.field_name' => 'my_trap']);
+    config(['livewire-honeypot.minimum_fill_seconds' => 0]);
+
+    $component = Livewire::test(CustomFieldComponent::class);
+
+    $component->call('submit');
+    $component->assertHasNoErrors();
+});
+
+// ---------------------------------------------------------------------------
+// Test components
+// ---------------------------------------------------------------------------
 class TestComponent extends Component
 {
     use HasHoneypot;
