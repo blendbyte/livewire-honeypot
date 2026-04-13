@@ -18,7 +18,8 @@ trait HasHoneypot
 
     protected function resetHoneypot(): void
     {
-        $this->hp_website = '';
+        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+        $this->$fieldName = '';
         $this->hp_started_at = now()->getTimestamp();
         $this->hp_token = Str::random(config('livewire-honeypot.token_length', 24));
     }
@@ -31,18 +32,18 @@ trait HasHoneypot
 
         // Require presence & emptiness of the bait field, plus meta fields
         $this->validate([
-            'hp_website' => 'present|size:0',
+            $fieldName => 'present|size:0',
             'hp_started_at' => 'required|integer',
             'hp_token' => "required|string|min:{$tokenMinLength}",
         ], [
-            'hp_website.size' => __('livewire-honeypot::validation.spam_detected'),
+            "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
         ]);
 
         // Time-trap: minimum time spent before submit
         $elapsed = now()->getTimestamp() - (int) $this->hp_started_at;
         if ($elapsed < $minimumFillSeconds) {
             throw ValidationException::withMessages([
-                'hp_website' => __('livewire-honeypot::validation.submitted_too_quickly'),
+                $fieldName => __('livewire-honeypot::validation.submitted_too_quickly'),
             ]);
         }
     }
