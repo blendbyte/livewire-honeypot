@@ -16,16 +16,18 @@ test('it merges the package config', function () {
     expect(config('livewire-honeypot.field_name'))->toBeString();
     expect(config('livewire-honeypot.token_min_length'))->toBeInt();
     expect(config('livewire-honeypot.token_length'))->toBeInt();
+    expect(config('livewire-honeypot.randomize_field_name'))->toBeBool();
 });
 
-test('it registers all four config keys', function () {
+test('it registers all five config keys', function () {
     $config = config('livewire-honeypot');
 
     expect($config)->toBeArray()
         ->toHaveKey('minimum_fill_seconds')
         ->toHaveKey('field_name')
         ->toHaveKey('token_min_length')
-        ->toHaveKey('token_length');
+        ->toHaveKey('token_length')
+        ->toHaveKey('randomize_field_name');
 });
 
 // ---------------------------------------------------------------------------
