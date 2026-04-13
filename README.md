@@ -17,9 +17,15 @@ Forked from [darvis/livewire-honeypot](https://github.com/darvis/livewire-honeyp
 - **Honeypot bait field** — hidden input that bots fill in, legitimate users never see (`present|size:0`)
 - **Time-trap** — enforces a configurable minimum time between page load and submission
 - **Token validation** — cryptographically random token verified on each submission
+- **Randomized field name** — optionally render the bait field with a random HTML `name` to defeat name-aware bots
 - **Livewire Trait** — drop-in protection for any Livewire component
+- **Per-component config** — override any honeypot setting per component via `honeypotConfig()`
 - **Controller / API Service** — use outside of Livewire for standard form controllers
 - **Blade component** — `<x-honeypot />` renders all hidden fields in one line
+- **Configurable spam responder** — choose how spam is handled: validation error, 403 abort, or silent redirect; or provide your own
+- **`HoneypotDetected` event** — fired on every spam detection, carrying IP, user-agent, reason, and component
+- **Structured logging** — optional log entry on every detection, routed to any Laravel logging channel
+- **Testing support** — `HoneypotService::fake()` bypasses validation in tests
 - **Multilingual** — 12 translations included: English, Dutch, German, Spanish, French, Portuguese, Italian, Russian, Polish, Japanese, Chinese Simplified, and Chinese Traditional
 - **Fully configurable** — all settings available via config file or environment variables
 - **Zero extra dependencies** — only requires Livewire 4 / Laravel 13
@@ -112,6 +118,54 @@ class ContactForm extends Component
 
 The trait's `mount` method will throw a `LogicException` with a clear message if the property is missing.
 
+#### Per-component configuration
+
+Override `honeypotConfig()` to customise any honeypot setting for a specific component without touching the global config:
+
+```php
+class RegistrationForm extends Component
+{
+    use HasHoneypot;
+
+    protected function honeypotConfig(): array
+    {
+        return [
+            'minimum_fill_seconds' => 10,
+            'token_length'         => 32,
+            'randomize_field_name' => true,
+        ];
+    }
+}
+```
+
+Supported keys: `minimum_fill_seconds`, `field_name`, `token_length`, `token_min_length`, `randomize_field_name`.
+
+Component-level values take precedence over the global config; any key not present falls back to the global config.
+
+#### Randomized field name
+
+When `randomize_field_name` is enabled (globally or per-component), the bait field is rendered in HTML with a random `name` attribute (e.g. `hp_a3f7c2`) instead of the configured `field_name`. This defeats bots that skip inputs by recognising known honeypot names.
+
+Pass `$hp_field_name` (automatically kept in sync by the trait) to the Blade component:
+
+```blade
+<x-honeypot :field-name="$hp_field_name" />
+```
+
+The `wire:model` binding is unaffected — only the rendered HTML `name` attribute is randomised.
+
+#### Overriding the minimum time per-action
+
+`validateHoneypot()` accepts an optional `$minimumSeconds` argument to override the config for a specific submit action:
+
+```php
+public function submitQuickPoll(): void
+{
+    $this->validateHoneypot(minimumSeconds: 2);
+    // ...
+}
+```
+
 ---
 
 ### Controllers / APIs (Service)
@@ -158,13 +212,9 @@ Then in your Blade template, use the values as hidden inputs:
 
 #### Overriding the minimum time per-request
 
-Both `validateHoneypot()` (trait) and `HoneypotService::validate()` accept an optional `$minimumSeconds` argument to override the global config for a specific action:
+`HoneypotService::validate()` also accepts an optional `$minimumSeconds` argument:
 
 ```php
-// Trait
-$this->validateHoneypot(minimumSeconds: 10);
-
-// Service
 $honeypot->validate($data, minimumSeconds: 10);
 ```
 
@@ -207,6 +257,20 @@ return [
 
     // Length of the token generated on page load
     'token_length' => env('HONEYPOT_TOKEN_LENGTH', 24),
+
+    // Randomise the HTML name attribute of the bait field on each page load
+    'randomize_field_name' => env('HONEYPOT_RANDOMIZE_FIELD_NAME', false),
+
+    // Structured logging when spam is detected
+    'logging' => [
+        'enabled' => env('HONEYPOT_LOGGING', false),
+        'channel' => env('HONEYPOT_LOG_CHANNEL', null), // null = default channel
+        'level'   => env('HONEYPOT_LOG_LEVEL', 'warning'),
+    ],
+
+    // How to respond when spam is detected
+    // Must implement Blendbyte\LivewireHoneypot\Contracts\SpamResponder
+    'spam_responder' => \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class,
 ];
 ```
 
@@ -218,8 +282,143 @@ return [
 | `HONEYPOT_FIELD_NAME` | `hp_website` | Name of the bait input field |
 | `HONEYPOT_TOKEN_MIN_LENGTH` | `10` | Minimum token length accepted during validation |
 | `HONEYPOT_TOKEN_LENGTH` | `24` | Length of the generated token |
+| `HONEYPOT_RANDOMIZE_FIELD_NAME` | `false` | Randomise the HTML `name` of the bait field each page load |
+| `HONEYPOT_LOGGING` | `false` | Enable structured log entries on spam detection |
+| `HONEYPOT_LOG_CHANNEL` | _(default)_ | Laravel logging channel to write to (`null` = app default) |
+| `HONEYPOT_LOG_LEVEL` | `warning` | PSR-3 log level (`debug`, `info`, `warning`, `error`, …) |
 
 > **Note:** `token_length` must be greater than or equal to `token_min_length`. The service provider throws an `InvalidArgumentException` on boot if this constraint is violated.
+
+---
+
+## Spam Responders
+
+When spam is detected you can control what happens via the `spam_responder` config key. Three responders are built in:
+
+| Class | Behaviour |
+|---|---|
+| `ValidationExceptionResponder` (default) | Throws a `ValidationException` — Livewire surfaces it as a field-level error |
+| `AbortResponder` | Calls `abort(403)` — hard rejection with a 403 Forbidden response |
+| `RedirectResponder` | Silently redirects the user back — the form appears to do nothing |
+
+Change the responder globally in `config/livewire-honeypot.php`:
+
+```php
+use Blendbyte\LivewireHoneypot\Responders\AbortResponder;
+
+'spam_responder' => AbortResponder::class,
+```
+
+### Custom responder
+
+Implement the `SpamResponder` contract to define your own behaviour:
+
+```php
+use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
+
+class SilentIgnoreResponder implements SpamResponder
+{
+    public function respond(string $fieldName, string $message): never
+    {
+        // Log the attempt, then pretend success
+        logger()->info('Honeypot triggered silently', ['field' => $fieldName]);
+        throw new \Illuminate\Http\Exceptions\HttpResponseException(
+            response()->json(['status' => 'ok'])
+        );
+    }
+}
+```
+
+Then register it in `config/livewire-honeypot.php`:
+
+```php
+'spam_responder' => \App\Http\Honeypot\SilentIgnoreResponder::class,
+```
+
+Or bind it in a service provider for maximum flexibility (e.g., to inject dependencies):
+
+```php
+$this->app->bind(
+    \Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class,
+    fn () => new SilentIgnoreResponder(/* deps */),
+);
+```
+
+---
+
+## HoneypotDetected Event
+
+Every spam detection fires a `Blendbyte\LivewireHoneypot\Events\HoneypotDetected` event regardless of which responder is configured. Listen to it for custom alerting, rate-limiting, or analytics:
+
+```php
+use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
+
+Event::listen(HoneypotDetected::class, function (HoneypotDetected $event) {
+    // $event->reason      — "honeypot_filled" | "submitted_too_quickly" | "invalid_form_data"
+    // $event->fieldName   — the bait field name (e.g. "hp_website")
+    // $event->ipAddress   — IP address of the request
+    // $event->userAgent   — user-agent string of the request
+    // $event->component   — FQCN of the Livewire component, or null for controller usage
+
+    logger()->critical('Bot attempt detected', [
+        'ip'     => $event->ipAddress,
+        'reason' => $event->reason,
+    ]);
+});
+```
+
+---
+
+## Logging
+
+Enable structured log entries so every spam detection is written to your Laravel log automatically — no manual event listener needed:
+
+```php
+// config/livewire-honeypot.php
+'logging' => [
+    'enabled' => true,
+    'channel' => 'slack',    // optional; null = default channel
+    'level'   => 'warning',  // any PSR-3 level
+],
+```
+
+Or via environment variables:
+
+```dotenv
+HONEYPOT_LOGGING=true
+HONEYPOT_LOG_CHANNEL=slack
+HONEYPOT_LOG_LEVEL=warning
+```
+
+Each log entry includes `reason`, `field_name`, `ip`, `user_agent`, and `component`:
+
+```
+[warning] Honeypot triggered {"reason":"honeypot_filled","field_name":"hp_website","ip":"1.2.3.4","user_agent":"curl/8.0","component":null}
+```
+
+---
+
+## Testing
+
+Use `HoneypotService::fake()` to bypass all honeypot validation in tests so you can test your form logic without having to construct valid honeypot payloads:
+
+```php
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
+
+beforeEach(fn () => HoneypotService::fake());
+afterEach(fn () => HoneypotService::resetFake());
+
+it('submits the contact form', function () {
+    Livewire::test(ContactForm::class)
+        ->set('name', 'Alice')
+        ->set('email', 'alice@example.com')
+        ->set('message', 'Hello there!')
+        ->call('submit')
+        ->assertHasNoErrors();
+});
+```
+
+When fake mode is active, `validateHoneypot()` (trait) and `HoneypotService::validate()` (service) both return immediately without checking any fields.
 
 ---
 
@@ -274,13 +473,13 @@ Route::post('/contact', [ContactController::class, 'store'])
 ## How It Works
 
 1. On page load, the trait / service generates a Unix timestamp (`hp_started_at`) and a cryptographically random token (`hp_token`). These are stored as hidden Livewire properties or passed to the view.
-2. The Blade component renders these values as hidden inputs alongside the bait field, which is visually positioned offscreen via CSS.
+2. The Blade component renders these values as hidden inputs alongside the bait field, which is visually positioned offscreen via CSS. If `randomize_field_name` is enabled, the bait field's HTML `name` is randomised each page load.
 3. On submission, `validateHoneypot()` / `HoneypotService::validate()` checks:
    - The bait field is **empty** (bots usually fill every visible and hidden input).
    - `hp_started_at` falls within the last hour (guards against replayed or stale forms).
    - `hp_token` meets the minimum length (guards against manually crafted requests).
    - Enough time has elapsed since page load (time-trap).
-4. Any failure throws a `ValidationException`, which Livewire or Laravel surfaces as a standard validation error.
+4. Any failure fires a `HoneypotDetected` event (and optionally writes a log entry), then delegates to the configured `SpamResponder` — by default a `ValidationException`, but configurable to a 403 abort, silent redirect, or any custom implementation.
 
 ---
 
