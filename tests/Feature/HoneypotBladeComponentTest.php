@@ -77,3 +77,21 @@ test('it sets autocomplete off on the text input', function () {
 
     expect($html)->toContain('autocomplete="off"');
 });
+
+test('it accepts a custom field-name prop for the name attribute', function () {
+    $html = Blade::render('<x-honeypot :field-name="$name" />', ['name' => 'hp_custom123']);
+
+    expect($html)->toContain('name="hp_custom123"');
+});
+
+test('wire:model.lazy still targets the static field_name when a custom field-name prop is passed', function () {
+    $html = Blade::render('<x-honeypot :field-name="$name" />', ['name' => 'hp_random99']);
+
+    expect($html)->toContain('wire:model.lazy=hp_website');
+});
+
+test('name attribute falls back to config field_name when no prop is passed', function () {
+    $html = Blade::render('<x-honeypot />');
+
+    expect($html)->toContain('name="hp_website"');
+});

@@ -11,6 +11,7 @@ use Illuminate\Validation\ValidationException;
 trait HasHoneypot
 {
     public string $hp_website = '';
+    public string $hp_field_name = '';
     public int $hp_started_at = 0;
     public string $hp_token = '';
 
@@ -34,6 +35,10 @@ trait HasHoneypot
         $this->$fieldName = '';
         $this->hp_started_at = now()->getTimestamp();
         $this->hp_token = Str::random(config('livewire-honeypot.token_length', 24));
+
+        $this->hp_field_name = config('livewire-honeypot.randomize_field_name', false)
+            ? 'hp_' . Str::lower(Str::random(6))
+            : $fieldName;
     }
 
     protected function validateHoneypot(?int $minimumSeconds = null): void

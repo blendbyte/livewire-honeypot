@@ -222,6 +222,63 @@ test('it works with a custom field_name when property is declared', function () 
 });
 
 // ---------------------------------------------------------------------------
+// Field name randomization
+// ---------------------------------------------------------------------------
+
+test('hp_field_name defaults to the configured field_name when randomization is disabled', function () {
+    config(['livewire-honeypot.randomize_field_name' => false]);
+
+    $component = Livewire::test(TestComponent::class);
+
+    expect($component->hp_field_name)->toBe('hp_website');
+});
+
+test('hp_field_name is set on mount', function () {
+    $component = Livewire::test(TestComponent::class);
+
+    expect($component->hp_field_name)->toBeString()->not->toBeEmpty();
+});
+
+test('hp_field_name is randomized when randomize_field_name config is enabled', function () {
+    config(['livewire-honeypot.randomize_field_name' => true]);
+
+    $a = Livewire::test(TestComponent::class)->hp_field_name;
+    $b = Livewire::test(TestComponent::class)->hp_field_name;
+
+    // Both should start with 'hp_' and be 9 chars (hp_ + 6 random chars)
+    expect($a)->toStartWith('hp_')->toHaveLength(9);
+    expect($b)->toStartWith('hp_')->toHaveLength(9);
+    // Statistically near-impossible for two random names to match
+    expect($a)->not->toBe($b);
+});
+
+test('hp_field_name is refreshed on resetHoneypot when randomization is enabled', function () {
+    config([
+        'livewire-honeypot.randomize_field_name' => true,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
+    ]);
+
+    $component = Livewire::test(TestComponent::class);
+    $original = $component->hp_field_name;
+
+    $component->call('submit');
+
+    expect($component->hp_field_name)->not->toBe($original);
+});
+
+test('validation still passes when randomization is enabled', function () {
+    config([
+        'livewire-honeypot.randomize_field_name' => true,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
+    ]);
+
+    $component = Livewire::test(TestComponent::class);
+    $component->call('submit');
+
+    $component->assertHasNoErrors();
+});
+
+// ---------------------------------------------------------------------------
 // Test components
 // ---------------------------------------------------------------------------
 class TestComponent extends Component

@@ -50,4 +50,19 @@ return [
 
     'token_length' => (int) env('HONEYPOT_TOKEN_LENGTH', 24),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Randomize Field Name
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, the honeypot bait field will be rendered in HTML with a
+    | random name (e.g. "hp_a3f7c2") instead of the configured field_name.
+    | This defeats bots that skip inputs by recognising known honeypot names.
+    | The Livewire wire:model binding is unaffected — only the HTML name
+    | attribute is randomised. Set to true to enable.
+    |
+    */
+
+    'randomize_field_name' => (bool) env('HONEYPOT_RANDOMIZE_FIELD_NAME', false),
+
 ];
