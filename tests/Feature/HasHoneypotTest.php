@@ -59,16 +59,58 @@ test('it resets honeypot after submission', function () {
 
 test('it respects config token length', function () {
     config(['livewire-honeypot.token_length' => 32]);
-    
+
     $component = Livewire::test(TestComponent::class);
-    
+
     expect($component->hp_token)->toHaveLength(32);
+});
+
+test('it uses configured field_name for validation', function () {
+    config(['livewire-honeypot.field_name' => 'my_trap']);
+
+    $component = Livewire::test(CustomFieldComponent::class);
+
+    $component->set('my_trap', 'https://spam.com');
+    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+
+    $component->call('submit');
+
+    $component->assertHasErrors('my_trap');
+});
+
+test('it uses configured field_name for time-trap error', function () {
+    config(['livewire-honeypot.field_name' => 'my_trap']);
+
+    $component = Livewire::test(CustomFieldComponent::class);
+
+    $component->call('submit');
+
+    $component->assertHasErrors('my_trap');
 });
 
 // Test component for Livewire tests
 class TestComponent extends Component
 {
     use HasHoneypot;
+
+    public function submit(): void
+    {
+        $this->validateHoneypot();
+        $this->resetHoneypot();
+    }
+
+    public function render()
+    {
+        return '<div>Test</div>';
+    }
+}
+
+// Test component with a custom honeypot field name
+class CustomFieldComponent extends Component
+{
+    use HasHoneypot;
+
+    public string $my_trap = '';
 
     public function submit(): void
     {

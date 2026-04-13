@@ -83,6 +83,28 @@ test('it uses config values', function () {
     expect($fields['hp_token'])->toHaveLength(32);
 });
 
+test('it uses configured field_name in generate', function () {
+    config(['livewire-honeypot.field_name' => 'my_trap']);
+
+    $fields = $this->service->generate();
+
+    expect($fields)->toHaveKey('my_trap');
+    expect($fields)->not->toHaveKey('hp_website');
+    expect($fields['my_trap'])->toBe('');
+});
+
+test('it uses configured field_name in validate', function () {
+    config(['livewire-honeypot.field_name' => 'my_trap']);
+
+    $data = [
+        'my_trap' => 'spam',
+        'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
+        'hp_token' => str_repeat('a', 24),
+    ];
+
+    $this->service->validate($data);
+})->throws(ValidationException::class);
+
 test('it translates error messages', function () {
     app()->setLocale('nl');
 
