@@ -62,8 +62,8 @@ trait HasHoneypot
             event(new HoneypotDetected(
                 fieldName: $fieldName,
                 reason: $reason,
-                ipAddress: request()?->ip(),
-                userAgent: request()?->userAgent(),
+                ipAddress: request()->ip(),
+                userAgent: request()->userAgent(),
                 component: static::class,
             ));
 
@@ -76,8 +76,8 @@ trait HasHoneypot
             event(new HoneypotDetected(
                 fieldName: $fieldName,
                 reason: 'submitted_too_quickly',
-                ipAddress: request()?->ip(),
-                userAgent: request()?->userAgent(),
+                ipAddress: request()->ip(),
+                userAgent: request()->userAgent(),
                 component: static::class,
             ));
 
