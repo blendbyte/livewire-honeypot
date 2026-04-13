@@ -1,6 +1,6 @@
 {
     "name": "blendbyte/livewire-honeypot",
-    "description": "Lightweight honeypot + time-trap protection for Livewire forms",
+    "description": "Honeypot + time-trap spam protection for Livewire 4 forms. No CAPTCHAs, no external requests.",
     "type": "library",
     "license": "MIT",
     "autoload": {
