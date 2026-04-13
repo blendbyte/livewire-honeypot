@@ -32,7 +32,7 @@ class HoneypotService
             "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
         ])->validate();
 
-        $elapsed = now()->getTimestamp() - (int)($data['hp_started_at'] ?? 0);
+        $elapsed = now()->getTimestamp() - (int) $data['hp_started_at'];
         if ($elapsed < $minimumSeconds) {
             throw ValidationException::withMessages([
                 $fieldName => __('livewire-honeypot::validation.submitted_too_quickly'),
