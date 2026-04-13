@@ -65,4 +65,23 @@ return [
 
     'randomize_field_name' => (bool) env('HONEYPOT_RANDOMIZE_FIELD_NAME', false),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Logging
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, a structured warning is written to your Laravel log
+    | whenever a spam submission is detected. Set a channel to route logs
+    | to a specific logging channel (e.g. "slack", "daily"); leave null to
+    | use the default channel. The level must be a valid PSR-3 level string
+    | (debug, info, notice, warning, error, critical, alert, emergency).
+    |
+    */
+
+    'logging' => [
+        'enabled' => (bool) env('HONEYPOT_LOGGING', false),
+        'channel' => env('HONEYPOT_LOG_CHANNEL', null),
+        'level'   => env('HONEYPOT_LOG_LEVEL', 'warning'),
+    ],
+
 ];
