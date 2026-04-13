@@ -17,9 +17,37 @@ trait HasHoneypot
     public int $hp_started_at = 0;
     public string $hp_token = '';
 
+    /**
+     * Override this method in your component to customise honeypot settings
+     * for that component without touching the global config.
+     *
+     * Supported keys: minimum_fill_seconds, field_name, token_length,
+     *                 token_min_length, randomize_field_name
+     *
+     * Example:
+     *   protected function honeypotConfig(): array
+     *   {
+     *       return ['minimum_fill_seconds' => 10, 'token_length' => 32];
+     *   }
+     *
+     * @return array<string, mixed>
+     */
+    protected function honeypotConfig(): array
+    {
+        return [];
+    }
+
+    /**
+     * Read a honeypot config value, preferring any component-level override.
+     */
+    private function getHoneypotConfig(string $key, mixed $default = null): mixed
+    {
+        return $this->honeypotConfig()[$key] ?? config("livewire-honeypot.{$key}", $default);
+    }
+
     public function mountHasHoneypot(): void
     {
-        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+        $fieldName = (string) $this->getHoneypotConfig('field_name', 'hp_website');
 
         if ($fieldName !== 'hp_website' && ! property_exists($this, $fieldName)) {
             throw new \LogicException(
@@ -33,12 +61,12 @@ trait HasHoneypot
 
     protected function resetHoneypot(): void
     {
-        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+        $fieldName = (string) $this->getHoneypotConfig('field_name', 'hp_website');
         $this->$fieldName = '';
         $this->hp_started_at = now()->getTimestamp();
-        $this->hp_token = Str::random(config('livewire-honeypot.token_length', 24));
+        $this->hp_token = Str::random((int) $this->getHoneypotConfig('token_length', 24));
 
-        $this->hp_field_name = config('livewire-honeypot.randomize_field_name', false)
+        $this->hp_field_name = (bool) $this->getHoneypotConfig('randomize_field_name', false)
             ? 'hp_' . Str::lower(Str::random(6))
             : $fieldName;
     }
@@ -49,9 +77,9 @@ trait HasHoneypot
             return;
         }
 
-        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
-        $tokenMinLength = config('livewire-honeypot.token_min_length', 10);
-        $minimumFillSeconds = $minimumSeconds ?? config('livewire-honeypot.minimum_fill_seconds', 5);
+        $fieldName = (string) $this->getHoneypotConfig('field_name', 'hp_website');
+        $tokenMinLength = (int) $this->getHoneypotConfig('token_min_length', 10);
+        $minimumFillSeconds = $minimumSeconds ?? (int) $this->getHoneypotConfig('minimum_fill_seconds', 5);
         $now = now()->getTimestamp();
 
         try {
