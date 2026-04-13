@@ -77,3 +77,37 @@ test('it registers the livewire-honeypot-config publish tag', function () {
 
     expect($paths)->not->toBeEmpty();
 });
+
+// ---------------------------------------------------------------------------
+// Token configuration guard
+// ---------------------------------------------------------------------------
+
+test('it throws when token_length is less than token_min_length', function () {
+    config([
+        'livewire-honeypot.token_length'     => 5,
+        'livewire-honeypot.token_min_length' => 10,
+    ]);
+
+    expect(fn () => (new HoneypotServiceProvider(app()))->boot())
+        ->toThrow(\InvalidArgumentException::class, 'token_length');
+});
+
+test('it does not throw when token_length equals token_min_length', function () {
+    config([
+        'livewire-honeypot.token_length'     => 10,
+        'livewire-honeypot.token_min_length' => 10,
+    ]);
+
+    expect(fn () => (new HoneypotServiceProvider(app()))->boot())
+        ->not->toThrow(\InvalidArgumentException::class);
+});
+
+test('it does not throw when token_length is greater than token_min_length', function () {
+    config([
+        'livewire-honeypot.token_length'     => 24,
+        'livewire-honeypot.token_min_length' => 10,
+    ]);
+
+    expect(fn () => (new HoneypotServiceProvider(app()))->boot())
+        ->not->toThrow(\InvalidArgumentException::class);
+});

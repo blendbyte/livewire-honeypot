@@ -37,5 +37,17 @@ class HoneypotServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__ . '/../config/livewire-honeypot.php' => config_path('livewire-honeypot.php'),
         ], 'livewire-honeypot-config');
+
+        // Guard against misconfigured token lengths
+        $tokenLength    = (int) config('livewire-honeypot.token_length', 24);
+        $tokenMinLength = (int) config('livewire-honeypot.token_min_length', 10);
+
+        if ($tokenLength < $tokenMinLength) {
+            throw new \InvalidArgumentException(
+                "livewire-honeypot: token_length ({$tokenLength}) must be greater than or equal to " .
+                "token_min_length ({$tokenMinLength}). Check your HONEYPOT_TOKEN_LENGTH and " .
+                "HONEYPOT_TOKEN_MIN_LENGTH environment variables."
+            );
+        }
     }
 }
