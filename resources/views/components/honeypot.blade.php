@@ -1,11 +1,16 @@
 {{-- Anonymous honeypot component. Usage: <x-honeypot /> --}}
-@php $fieldName = config('livewire-honeypot.field_name', 'hp_website'); @endphp
+{{-- With randomized field name: <x-honeypot :field-name="$hp_field_name" /> --}}
+@props(['fieldName' => null])
+@php
+    $staticFieldName = config('livewire-honeypot.field_name', 'hp_website');
+    $displayName = $fieldName ?? $staticFieldName;
+@endphp
 <div class="hp-field" aria-hidden="true">
     <label>
         <span>{{ __('livewire-honeypot::validation.honeypot_label') }}</span>
         <input type="text"
-               name="{{ $fieldName }}"
-               {!! $attributes->whereStartsWith('wire:model')->first() ? '' : "wire:model.lazy={$fieldName}" !!}
+               name="{{ $displayName }}"
+               {!! $attributes->whereStartsWith('wire:model')->first() ? '' : "wire:model.lazy={$staticFieldName}" !!}
                tabindex="-1"
                autocomplete="off" />
     </label>

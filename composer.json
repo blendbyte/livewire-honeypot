@@ -34,7 +34,7 @@
     },
     "scripts": {
         "test": "vendor/bin/pest",
-        "analyse": "vendor/bin/phpstan analyse --ansi"
+        "analyse": "vendor/bin/phpstan analyse --ansi --memory-limit=512M"
     },
     "minimum-stability": "stable",
     "prefer-stable": true,

@@ -50,4 +50,55 @@ return [
 
     'token_length' => (int) env('HONEYPOT_TOKEN_LENGTH', 24),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Randomize Field Name
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, the honeypot bait field will be rendered in HTML with a
+    | random name (e.g. "hp_a3f7c2") instead of the configured field_name.
+    | This defeats bots that skip inputs by recognising known honeypot names.
+    | The Livewire wire:model binding is unaffected — only the HTML name
+    | attribute is randomised. Set to true to enable.
+    |
+    */
+
+    'randomize_field_name' => (bool) env('HONEYPOT_RANDOMIZE_FIELD_NAME', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Logging
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, a structured warning is written to your Laravel log
+    | whenever a spam submission is detected. Set a channel to route logs
+    | to a specific logging channel (e.g. "slack", "daily"); leave null to
+    | use the default channel. The level must be a valid PSR-3 level string
+    | (debug, info, notice, warning, error, critical, alert, emergency).
+    |
+    */
+
+    'logging' => [
+        'enabled' => (bool) env('HONEYPOT_LOGGING', false),
+        'channel' => env('HONEYPOT_LOG_CHANNEL', null),
+        'level'   => env('HONEYPOT_LOG_LEVEL', 'warning'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Spam Responder
+    |--------------------------------------------------------------------------
+    |
+    | The class to use when spam is detected. Must implement
+    | Blendbyte\LivewireHoneypot\Contracts\SpamResponder.
+    |
+    | Built-in options:
+    |   - ValidationExceptionResponder::class  (default) field-level error
+    |   - AbortResponder::class                abort(403)
+    |   - RedirectResponder::class             redirect()->back() silently
+    |
+    */
+
+    'spam_responder' => \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class,
+
 ];

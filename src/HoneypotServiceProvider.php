@@ -2,8 +2,11 @@
 
 namespace Blendbyte\LivewireHoneypot;
 
-use Illuminate\Support\ServiceProvider;
+use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\ServiceProvider;
 
 class HoneypotServiceProvider extends ServiceProvider
 {
@@ -12,6 +15,14 @@ class HoneypotServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(
             __DIR__ . '/../config/livewire-honeypot.php',
             'livewire-honeypot'
+        );
+
+        $this->app->bind(
+            \Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class,
+            static fn () => app(config(
+                'livewire-honeypot.spam_responder',
+                \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class
+            ))
         );
     }
 
@@ -48,6 +59,28 @@ class HoneypotServiceProvider extends ServiceProvider
                 "token_min_length ({$tokenMinLength}). Check your HONEYPOT_TOKEN_LENGTH and " .
                 "HONEYPOT_TOKEN_MIN_LENGTH environment variables."
             );
+        }
+
+        // Register structured logging listener when enabled
+        if (config('livewire-honeypot.logging.enabled', false)) {
+            Event::listen(HoneypotDetected::class, static function (HoneypotDetected $event): void {
+                $level   = (string) config('livewire-honeypot.logging.level', 'warning');
+                $channel = config('livewire-honeypot.logging.channel');
+
+                $context = [
+                    'reason'     => $event->reason,
+                    'field_name' => $event->fieldName,
+                    'ip'         => $event->ipAddress,
+                    'user_agent' => $event->userAgent,
+                    'component'  => $event->component,
+                ];
+
+                if ($channel) {
+                    Log::channel((string) $channel)->log($level, 'Honeypot triggered', $context);
+                } else {
+                    Log::log($level, 'Honeypot triggered', $context);
+                }
+            });
         }
     }
 }

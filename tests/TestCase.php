@@ -3,6 +3,7 @@
 namespace Blendbyte\LivewireHoneypot\Tests;
 
 use Blendbyte\LivewireHoneypot\HoneypotServiceProvider;
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
@@ -23,8 +24,18 @@ abstract class TestCase extends Orchestra
         $app['config']->set('livewire-honeypot.field_name', 'hp_website');
         $app['config']->set('livewire-honeypot.token_min_length', 10);
         $app['config']->set('livewire-honeypot.token_length', 24);
-        
+        $app['config']->set('livewire-honeypot.randomize_field_name', false);
+        $app['config']->set('livewire-honeypot.logging.enabled', false);
+        $app['config']->set('livewire-honeypot.spam_responder', \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class);
+
         // Setup app key for encryption
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+    }
+
+    protected function tearDown(): void
+    {
+        HoneypotService::resetFake();
+
+        parent::tearDown();
     }
 }
