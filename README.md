@@ -469,10 +469,6 @@ Route::post('/contact', [ContactController::class, 'store'])
 
 **CSRF protection** — always use `@csrf` in non-Livewire forms (Livewire handles this automatically).
 
-## License
-
-MIT — see [LICENSE](LICENSE).
-
 ---
 
 ## Maintained by Blendbyte
