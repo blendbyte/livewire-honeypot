@@ -1,3 +1,5 @@
+<img width="2560" height="840" alt="livewire-honeypot-banner" src="https://github.com/user-attachments/assets/bfa67e85-1864-4cb5-8df5-cf6880850f2f" />
+
 # livewire-honeypot
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/blendbyte/livewire-honeypot.svg?style=flat-square)](https://packagist.org/packages/blendbyte/livewire-honeypot)
