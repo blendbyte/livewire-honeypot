@@ -58,6 +58,25 @@ test('a filled bait field from a component config override is rejected', async (
     await expect(page.locator('.submissions')).toHaveText('0');
 });
 
+test('a null JS marker rejects cleanly and allows a valid retry', async ({ page }) => {
+    await page.goto('/default');
+    await expect(page.locator('input[name="hp_js"]')).toHaveValue('1');
+    await page.getByLabel('Email').fill('visitor@example.com');
+    await page.evaluate(() => window.Livewire.all()[0].$wire.$set('hp_js', null, false));
+    const response = page.waitForResponse(response => response.request().method() === 'POST'
+        && response.request().postDataJSON()?.components?.some(component =>
+            component.calls.some(call => call.method === 'submit')));
+    await page.getByRole('button', { name: 'Submit', exact: true }).click();
+    expect((await response).status()).toBe(200);
+    await expect(page.locator('.hp-error')).toHaveText('JavaScript verification failed.');
+    await expect(page.locator('.submissions')).toHaveText('0');
+
+    await page.evaluate(() => window.Livewire.all()[0].$wire.$set('hp_js', '1', false));
+    await page.getByRole('button', { name: 'Submit', exact: true }).click();
+    await expect(page.locator('.submissions')).toHaveText('1');
+    await expect(page.locator('.hp-error')).toHaveCount(0);
+});
+
 test('resetting one component leaves another component ready to submit', async ({ page }) => {
     await page.goto('/multiple');
     const forms = page.locator('form');

@@ -1,6 +1,9 @@
 <?php
 
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
+use Blendbyte\LivewireHoneypot\Responders\AbortResponder;
+use Blendbyte\LivewireHoneypot\Responders\RedirectResponder;
+use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 use Illuminate\Support\Facades\Event;
 use Livewire\Component;
@@ -38,6 +41,34 @@ test('explicit model and HTML name still override the component defaults', funct
         ->set('contact.trap', 'spam')->call('submit')
         ->assertHasErrors('contact.trap')
         ->assertSeeHtml('<p class="hp-error" role="alert">Spam detected.</p>');
+});
+
+test('a null JS marker in the submit request follows the configured rejection path', function (string $responder, string $componentClass) {
+    config(['livewire-honeypot.spam_responder' => $responder]);
+    EdgeCaseHoneypotComponent::$settings['require_js_verification'] = true;
+    $component = Livewire::test($componentClass);
+    $component->update([['method' => 'submit', 'params' => []]], ['hp_js' => null]);
+
+    if ($responder === AbortResponder::class) {
+        $component->assertStatus(403);
+    } elseif ($responder === RedirectResponder::class) {
+        $component->assertStatus(200)->assertRedirect(url('/'));
+    } else {
+        $component->assertStatus(200)->assertHasErrors($componentClass === ExplicitEdgeCaseHoneypotComponent::class ? 'contact.trap' : 'trap')
+            ->assertSee('JavaScript verification failed.');
+    }
+    expect(EdgeCaseHoneypotComponent::$processed)->toBeFalse();
+    Event::assertDispatchedTimes(HoneypotDetected::class, 1);
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'js_verification_failed');
+})->with([ValidationExceptionResponder::class, AbortResponder::class, RedirectResponder::class])
+    ->with([[EdgeCaseHoneypotComponent::class], [ExplicitEdgeCaseHoneypotComponent::class]]);
+
+test('a null JS marker does not block submissions when verification is disabled', function () {
+    Livewire::test(EdgeCaseHoneypotComponent::class)
+        ->update([['method' => 'submit', 'params' => []]], ['hp_js' => null])
+        ->assertHasNoErrors()->assertSet('hp_js', '');
+    expect(EdgeCaseHoneypotComponent::$processed)->toBeTrue();
+    Event::assertNotDispatched(HoneypotDetected::class);
 });
 
 test('invalid effective token lengths fail during component initialization', function (array $settings) {

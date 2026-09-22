@@ -152,7 +152,7 @@ trait HasHoneypot
         // Validate only honeypot state without consuming application validation hooks.
         $rootField = explode('.', $fieldName)[0];
         $data = $this->unwrapDataForValidation(
-            Arr::only($this->all(), [$rootField, 'hp_started_at', 'hp_token']),
+            Arr::only($this->all(), [$rootField, 'hp_started_at', 'hp_token', 'hp_js']),
         );
 
         try {
@@ -194,7 +194,8 @@ trait HasHoneypot
         }
 
         // JS verification: field must be populated by Alpine.js on page load
-        if ($this->isHoneypotJsVerificationRequired() && trim($this->hp_js) === '') {
+        // Livewire exposes unset typed properties as null in all().
+        if ($this->isHoneypotJsVerificationRequired() && trim($data['hp_js'] ?? '') === '') {
             event(new HoneypotDetected(
                 fieldName: $fieldName,
                 reason: 'js_verification_failed',
