@@ -154,12 +154,17 @@ test('blade component hp_js field has x-data and x-init Alpine directives', func
         ->toContain('x-init');
 });
 
-test('blade component hp_js field sets value via btoa', function () {
+test('blade component leaves the verification value for JavaScript to populate', function () {
     config(['livewire-honeypot.require_js_verification' => true]);
 
     $html = Blade::render('<x-honeypot />');
 
-    expect($html)->toContain('btoa(');
+    $document = new DOMDocument();
+    $document->loadHTML($html);
+    $input = (new DOMXPath($document))->query('//input[@name="hp_js"]')->item(0);
+
+    expect($input->hasAttribute('value'))->toBeFalse();
+    expect($input->getAttribute('x-bind:value'))->toBe("'1'");
 });
 
 test('blade component hp_js field dispatches input event', function () {
@@ -167,7 +172,7 @@ test('blade component hp_js field dispatches input event', function () {
 
     $html = Blade::render('<x-honeypot />');
 
-    expect($html)->toContain("dispatchEvent(new Event('input'");
+    expect($html)->toContain("\$dispatch('input', '1')");
 });
 
 test('blade component hp_js field has wire:model binding', function () {

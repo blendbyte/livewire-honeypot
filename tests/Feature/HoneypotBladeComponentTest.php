@@ -51,7 +51,34 @@ test('it injects offscreen CSS styles', function () {
     $html = Blade::render('<x-honeypot />');
 
     expect($html)->toContain('.hp-field')
-        ->toContain('position: absolute');
+        ->toContain('position: absolute')
+        ->not->toContain('nonce=');
+});
+
+test('it uses the Vite CSP nonce on its hiding stylesheet', function () {
+    \Illuminate\Support\Facades\Vite::useCspNonce('vite-nonce');
+
+    $html = Blade::render('<x-honeypot />');
+
+    expect($html)->toMatch('/<style\s+nonce="vite-nonce"\s*>/')
+        ->toContain('class="hp-field"')
+        ->toContain('.hp-field');
+});
+
+test('an explicit CSP nonce takes precedence over the Vite nonce', function () {
+    \Illuminate\Support\Facades\Vite::useCspNonce('vite-nonce');
+
+    $html = Blade::render('<x-honeypot :nonce="$nonce" />', ['nonce' => 'explicit-nonce']);
+
+    expect($html)->toMatch('/<style\s+nonce="explicit-nonce"\s*>/')
+        ->not->toContain('vite-nonce');
+});
+
+test('CSP nonces are escaped as attribute values', function () {
+    $html = Blade::render('<x-honeypot :nonce="$nonce" />', ['nonce' => '"><script>alert(1)</script>']);
+
+    expect($html)->toContain('nonce="&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"')
+        ->not->toContain('<script>');
 });
 
 test('it renders the honeypot_label translation in the label span', function () {

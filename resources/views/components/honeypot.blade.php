@@ -1,7 +1,8 @@
 {{-- Anonymous honeypot component. Usage: <x-honeypot /> --}}
 {{-- With randomized field name: <x-honeypot :field-name="$hp_field_name" /> --}}
-@props(['fieldName' => null, 'errorKey' => null])
+@props(['fieldName' => null, 'errorKey' => null, 'nonce' => null])
 @php
+    $cspNonce = $nonce ?? \Illuminate\Support\Facades\Vite::cspNonce();
     $staticFieldName = config('livewire-honeypot.field_name', 'hp_website');
     $displayName = $fieldName ?? $staticFieldName;
     $modelAttributes = $attributes->whereStartsWith('wire:model');
@@ -39,10 +40,11 @@
            name="hp_js"
            wire:model="hp_js"
            x-data
-           x-init="$el.value = btoa(String(Date.now())); $el.dispatchEvent(new Event('input', {bubbles: true}))" />
+           x-bind:value="'1'"
+           x-init="$dispatch('input', '1')" />
     @endif
 
-    <style>
+    <style @if($cspNonce !== null) nonce="{{ $cspNonce }}" @endif>
         .hp-field {
             position: absolute !important;
             left: -10000px !important;

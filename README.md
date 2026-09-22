@@ -195,6 +195,8 @@ The `wire:model` binding is unaffected — only the rendered HTML `name` attribu
 
 When `require_js_verification` is enabled, the Blade component renders an additional hidden field (`hp_js`) that is populated client-side by Alpine.js via an `x-init` directive. Bots and headless scrapers that submit forms without executing JavaScript will leave this field empty, and the submission will be rejected.
 
+Alpine binds the value `1` to the hidden input and dispatches an input event to update Livewire. This is only a nonempty JavaScript marker; it is not a timestamp or an authenticated token.
+
 Enable it globally:
 
 ```env
@@ -310,6 +312,22 @@ The timestamp (`hp_started_at`) and token (`hp_token`) are locked Livewire prope
 If you previously published or copied the Blade view, remove the `hp_started_at` and `hp_token` inputs from your Livewire form. Their old `wire:model` bindings target properties that now reject client updates. Plain controller forms still need the signed `hp_token` input shown above.
 
 To show errors in a previously published view, also copy the updated error lookup and message block from the package view, keeping the message outside the `.hp-field` wrapper.
+
+### Content Security Policy
+
+The component automatically uses Laravel Vite's current CSP nonce on its inline `<style>` block. If your application's request middleware calls `Vite::useCspNonce()`, no component changes are needed. Your CSP header must allow that same nonce in `style-src` (or `style-src-elem` when specified).
+
+You can also pass a nonce explicitly, which takes precedence over Vite's nonce:
+
+```blade
+<x-honeypot :nonce="$cspNonce" />
+```
+
+Pass the raw nonce value, without the `nonce-` prefix. Generate a fresh nonce for each page response and use the same value in the response's CSP header. Without a nonce, the component keeps its existing inline stylesheet behavior. Its CSS and `.hp-field` class stay stable across Livewire renders.
+
+For policies that prohibit `unsafe-eval`, enable `'csp_safe' => true` in `config/livewire.php`, as described in the [Livewire CSP documentation](https://livewire.laravel.com/docs/4.x/csp). The optional JS verification uses expressions supported by that build. Configure Livewire's own script and style nonces as well; the component's `nonce` prop only applies to its hiding stylesheet.
+
+If you published the Blade view, copy the updated nonce handling and the `hp_js` input's `x-bind:value` and `x-init` directives into your copy. For a policy that only allows external stylesheets, move the `.hp-field` CSS into your application's stylesheet and remove the inline `<style>` block from the published view.
 
 ## Configuration
 
