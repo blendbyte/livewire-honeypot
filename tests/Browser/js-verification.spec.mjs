@@ -15,7 +15,7 @@ test.afterEach(async ({ page }) => {
     expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
 });
 
-for (const binding of ['default', 'custom']) {
+for (const binding of ['default', 'custom', 'configured']) {
     test(`${binding} binding survives refresh, validation failure, and repeated submits`, async ({ page }) => {
         await page.goto(`/${binding}`);
         const marker = page.locator('input[name="hp_js"]');
@@ -44,6 +44,19 @@ for (const binding of ['default', 'custom']) {
         }
     });
 }
+
+test('a filled bait field from a component config override is rejected', async ({ page }) => {
+    await page.goto('/configured');
+    const bait = page.locator('input[name="trap"]');
+    await expect(bait).toHaveAttribute('wire:model.lazy', 'trap');
+    await page.getByLabel('Email').fill('visitor@example.com');
+    // Make the offscreen input reachable for actual keyboard input.
+    await bait.evaluate(input => input.closest('.hp-field').classList.remove('hp-field'));
+    await bait.fill('spam');
+    await page.getByRole('button', { name: 'Submit', exact: true }).click();
+    await expect(page.locator('.hp-error')).toHaveText('Spam detected.');
+    await expect(page.locator('.submissions')).toHaveText('0');
+});
 
 test('resetting one component leaves another component ready to submit', async ({ page }) => {
     await page.goto('/multiple');

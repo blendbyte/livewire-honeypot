@@ -8,7 +8,8 @@
     $requiresJsVerification = $honeypotComponent?->isHoneypotJsVerificationRequired()
         ?? \Blendbyte\LivewireHoneypot\HoneypotConfig::get('require_js_verification');
     $cspNonce = $nonce ?? \Illuminate\Support\Facades\Vite::cspNonce();
-    $staticFieldName = \Blendbyte\LivewireHoneypot\HoneypotConfig::get('field_name');
+    $staticFieldName = $honeypotComponent?->getHoneypotFieldName()
+        ?? \Blendbyte\LivewireHoneypot\HoneypotConfig::get('field_name');
     $displayName = $fieldName ?? $staticFieldName;
     $modelAttributes = $attributes->whereStartsWith('wire:model');
     $errorKeys = [$errorKey ?? $modelAttributes->first() ?? $staticFieldName, 'hp_started_at', 'hp_token'];

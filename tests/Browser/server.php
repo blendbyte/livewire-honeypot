@@ -90,17 +90,37 @@ BLADE;
     }
 }
 
+class ConfiguredFieldBrowserComponent extends JsVerificationBrowserComponent
+{
+    public string $trap = '';
+
+    protected function honeypotConfig(): array
+    {
+        return [...parent::honeypotConfig(), 'field_name' => 'trap'];
+    }
+}
+
 Livewire::component('browser-honeypot', JsVerificationBrowserComponent::class);
+Livewire::component('configured-honeypot', ConfiguredFieldBrowserComponent::class);
 Vite::useCspNonce('browser-test-nonce');
 Route::middleware('web')->get('/{mode?}', function (string $mode = 'default') {
     $html = Blade::render(<<<'BLADE'
 <!doctype html>
 <html><head><meta name="csrf-token" content="{{ csrf_token() }}">@livewireStyles</head><body>
-<livewire:browser-honeypot :custom="$custom" :redirect-spam="$redirectSpam" />
+@if($configured)
+    <livewire:configured-honeypot />
+@else
+    <livewire:browser-honeypot :custom="$custom" :redirect-spam="$redirectSpam" />
+@endif
 @if($multiple) <livewire:browser-honeypot :custom="true" /> @endif
 @livewireScripts
 </body></html>
-BLADE, ['custom' => $mode === 'custom', 'multiple' => $mode === 'multiple', 'redirectSpam' => $mode === 'redirect']);
+BLADE, [
+    'custom' => $mode === 'custom',
+    'multiple' => $mode === 'multiple',
+    'redirectSpam' => $mode === 'redirect',
+    'configured' => $mode === 'configured',
+]);
 
     $policy = "default-src 'self'; script-src 'self' 'nonce-browser-test-nonce'";
     if (! config('livewire.csp_safe')) {

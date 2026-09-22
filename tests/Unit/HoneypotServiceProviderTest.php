@@ -115,6 +115,16 @@ test('it does not throw when token_length equals token_min_length', function () 
         ->not->toThrow(\InvalidArgumentException::class);
 });
 
+test('it rejects nonpositive global token lengths', function (int $length, int $minimum) {
+    config([
+        'livewire-honeypot.token_length' => $length,
+        'livewire-honeypot.token_min_length' => $minimum,
+    ]);
+
+    expect(fn () => (new HoneypotServiceProvider(app()))->boot())
+        ->toThrow(InvalidArgumentException::class, 'must be positive');
+})->with([[0, 0], [-1, -1], [24, 0], [24, -1]]);
+
 test('it does not throw when token_length is greater than token_min_length', function () {
     config([
         'livewire-honeypot.token_length'     => 24,

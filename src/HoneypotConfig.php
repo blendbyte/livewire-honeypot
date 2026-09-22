@@ -31,4 +31,15 @@ final class HoneypotConfig
     {
         return config('livewire-honeypot.' . $key, $default ?? Arr::get(self::DEFAULTS, $key));
     }
+
+    public static function validateTokenLengths(int $length, int $minimum): void
+    {
+        if ($length < 1 || $minimum < 1 || $length < $minimum) {
+            throw new \InvalidArgumentException(
+                "livewire-honeypot: token_length ({$length}) and token_min_length ({$minimum}) must be positive, " .
+                'and token_length must be greater than or equal to token_min_length. ' .
+                'Check your livewire-honeypot config and honeypotConfig() overrides.'
+            );
+        }
+    }
 }

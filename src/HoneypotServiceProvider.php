@@ -58,16 +58,10 @@ class HoneypotServiceProvider extends ServiceProvider
         ], 'livewire-honeypot-config');
 
         // Guard against misconfigured token lengths
-        $tokenLength    = (int) HoneypotConfig::get('token_length');
-        $tokenMinLength = (int) HoneypotConfig::get('token_min_length');
-
-        if ($tokenLength < $tokenMinLength) {
-            throw new \InvalidArgumentException(
-                "livewire-honeypot: token_length ({$tokenLength}) must be greater than or equal to " .
-                "token_min_length ({$tokenMinLength}). Check your HONEYPOT_TOKEN_LENGTH and " .
-                "HONEYPOT_TOKEN_MIN_LENGTH environment variables."
-            );
-        }
+        HoneypotConfig::validateTokenLengths(
+            (int) HoneypotConfig::get('token_length'),
+            (int) HoneypotConfig::get('token_min_length'),
+        );
 
         // Register structured logging listener when enabled
         if (HoneypotConfig::get('logging.enabled')) {

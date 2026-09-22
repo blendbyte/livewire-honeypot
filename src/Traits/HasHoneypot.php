@@ -65,9 +65,14 @@ trait HasHoneypot
         return (bool) $this->getHoneypotConfig('require_js_verification');
     }
 
+    public function getHoneypotFieldName(): string
+    {
+        return (string) $this->getHoneypotConfig('field_name');
+    }
+
     public function mountHasHoneypot(): void
     {
-        $fieldName = (string) $this->getHoneypotConfig('field_name');
+        $fieldName = $this->getHoneypotFieldName();
 
         if ($fieldName !== 'hp_website' && ! property_exists($this, $fieldName)) {
             throw new \LogicException(
@@ -84,11 +89,14 @@ trait HasHoneypot
      */
     protected function resetHoneypot(): void
     {
-        $fieldName = (string) $this->getHoneypotConfig('field_name');
+        $tokenLength = (int) $this->getHoneypotConfig('token_length');
+        HoneypotConfig::validateTokenLengths($tokenLength, (int) $this->getHoneypotConfig('token_min_length'));
+
+        $fieldName = $this->getHoneypotFieldName();
         $this->$fieldName = '';
 
         $this->hp_started_at = now()->getTimestamp();
-        $this->hp_token = Str::random((int) $this->getHoneypotConfig('token_length'));
+        $this->hp_token = Str::random($tokenLength);
         // The Blade input key follows hp_token so Alpine runs again after a reset.
         $this->hp_js = '';
 
@@ -113,7 +121,7 @@ trait HasHoneypot
         }
 
         $this->validateHoneypotForModel(
-            (string) $this->getHoneypotConfig('field_name'),
+            $this->getHoneypotFieldName(),
             $minimumSeconds,
         );
     }
