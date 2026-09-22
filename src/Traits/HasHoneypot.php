@@ -8,6 +8,7 @@ use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
+use Livewire\Component;
 
 /**
  * @phpstan-require-extends \Livewire\Component
@@ -112,6 +113,15 @@ trait HasHoneypot
     {
         if (HoneypotService::isFake()) {
             return;
+        }
+
+        // Form objects do not run the component's mount hook.
+        // Components with missing metadata must still receive validation errors.
+        if ($this->hp_started_at === 0 && ! ($this instanceof Component)) {
+            throw new \LogicException(
+                'LivewireHoneypot: Use the HasHoneypot trait on the Livewire component, not on a form object. ' .
+                'For a bait field on a form object, call validateHoneypotForModel(\'form.trap\') on the component.'
+            );
         }
 
         $fieldName = $model;

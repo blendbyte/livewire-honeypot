@@ -149,6 +149,8 @@ public function submit(): void
 
 Top-level properties, nested arrays, and properties on a Livewire form object are supported. Initialize the bait property to an empty string and keep the `HasHoneypot` trait on the Livewire component. Validation errors and detection events use the chosen property path, such as `contact.trap`.
 
+Using the trait directly on a Livewire form object skips its mount hook and leaves the honeypot uninitialized. Validation then throws a `LogicException` explaining where the trait belongs. Keep the trait and validation call on the component, and use `validateHoneypotForModel('form.trap')` for a bait property on the form object. Components with missing honeypot metadata continue to return normal validation errors.
+
 Binding modifiers such as `wire:model.blur` are preserved. The optional JS verification field remains bound to `hp_js` independently. The `field-name` prop changes only the HTML input name, so it can still be used for randomization alongside a custom binding.
 
 `validateHoneypotForModel('contact.trap', minimumSeconds: 2)` also overrides the minimum fill time. The existing `validateHoneypot(?int $minimumSeconds = null)` and `resetHoneypot()` signatures are unchanged, so subclass overrides remain compatible. Those methods continue to use the configured `field_name`. If you override `field_name` per component, set the Blade component's `wire:model` to that property too.
