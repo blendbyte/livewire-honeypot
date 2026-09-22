@@ -24,7 +24,11 @@ The default responder shows a validation error. The component displays the first
 
 The `spam_responder` config accepts `ValidationExceptionResponder`, `AbortResponder` (403), or `RedirectResponder` (redirect back), all under `Blendbyte\LivewireHoneypot\Responders`. Custom responders implement `Blendbyte\LivewireHoneypot\Contracts\SpamResponder::respond(string $fieldName, string $message): never` and must terminate execution.
 
-**Current limitation:** custom responders handle timing and JS-verification failures. In Livewire, bait and metadata validation failures still throw ordinary validation errors. In plain forms, bait failures use the responder, but invalid-token and expiry failures use ordinary validation errors.
+Configured responders handle bait, metadata, expiry, timing, and JS-verification failures in both Livewire and plain forms. Custom responders receive the bait field name (or custom model path) and a message; metadata failures use `invalid_form_data`. The built-in default preserves the existing validation error keys and rule details.
+
+Honeypot checks use a separate validator, leaving application `withValidator()` and `prepareForValidation()` hooks for your normal form validation. Successful checks clear only honeypot errors.
+
+`RedirectResponder` stops the rejected action and uses Livewire's redirect effect for component requests. Plain forms receive a normal HTTP 302 redirect.
 
 ## Detection events and logs
 

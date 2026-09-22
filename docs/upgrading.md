@@ -8,6 +8,9 @@ Review these changes if you used the package before locked Livewire metadata and
 - **Livewire form objects:** keep `HasHoneypot` on the component. Direct use on an uninitialized form object now throws a developer-facing `LogicException`.
 - **Published translations:** update `honeypot_label` to the neutral label from the package if you want the autofill changes.
 - **Tests:** use time travel instead of setting locked metadata. `HoneypotService::fake()` bypasses validation but does not unlock those properties.
+- **Custom responders:** bait and metadata failures now honor your selected responder consistently. An abort responder returns 403 for invalid or expired tokens too; the built-in default keeps its existing validation errors.
+- **Validation hooks:** honeypot checks run independently of application `withValidator()` and `prepareForValidation()` hooks. Keep those hooks for your normal form validation.
+- **Redirect tests:** Livewire rejections using `RedirectResponder` now return a redirect effect in a 200 response. Use `assertRedirect()` in component tests; plain forms still return HTTP 302.
 
 The configuration accessor refactor requires no application changes. Existing published config files continue to work.
 
