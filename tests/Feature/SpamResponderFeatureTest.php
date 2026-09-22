@@ -43,13 +43,10 @@ test('AbortResponder returns 403 when submitted too quickly via trait', function
 test('RedirectResponder returns a redirect response when submitted too quickly via trait', function () {
     app()->bind(SpamResponder::class, fn () => new RedirectResponder());
 
-    // Trigger the time-trap: hp_started_at just set, so elapsed < minimum_fill_seconds
-    // HttpResponseException wrapping redirect()->back() is converted to an HTTP redirect response.
     $component = Livewire::test(ResponderTestComponent::class);
     $component->call('submit');
 
-    // The redirect response results in a 3xx HTTP status code.
-    $component->assertStatus(302);
+    $component->assertStatus(200)->assertRedirect(url('/'));
 });
 
 // ---------------------------------------------------------------------------

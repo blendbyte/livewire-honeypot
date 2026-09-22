@@ -4,6 +4,7 @@
 require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 use Blendbyte\LivewireHoneypot\Tests\TestCase;
+use Blendbyte\LivewireHoneypot\Responders\RedirectResponder;
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
@@ -38,6 +39,8 @@ class JsVerificationBrowserComponent extends Component
 
     #[Locked]
     public bool $custom = false;
+    #[Locked]
+    public bool $redirectSpam = false;
     public array $contact = ['trap' => ''];
     public string $email = '';
     public int $submissions = 0;
@@ -49,11 +52,20 @@ class JsVerificationBrowserComponent extends Component
 
     public function submit(): void
     {
+        if ($this->redirectSpam) {
+            config(['livewire-honeypot.spam_responder' => RedirectResponder::class]);
+        }
         $this->custom ? $this->validateHoneypotForModel('contact.trap') : $this->validateHoneypot();
         $this->validate(['email' => 'required|email']);
         $this->submissions++;
         $this->reset('email');
         $this->custom ? $this->resetHoneypotForModel('contact.trap') : $this->resetHoneypot();
+    }
+
+    public function submitExpired(): void
+    {
+        $this->hp_started_at = now()->getTimestamp() - 3601;
+        $this->submit();
     }
 
     public function render(): string
@@ -69,6 +81,9 @@ class JsVerificationBrowserComponent extends Component
     @error('email') <p class="email-error">{{ $message }}</p> @enderror
     <p class="submissions">{{ $submissions }}</p>
     <button type="submit">Submit</button>
+    @if($redirectSpam)
+        <button type="button" wire:click="submitExpired">Submit expired form</button>
+    @endif
     <button type="button" wire:click="$refresh">Refresh</button>
 </form>
 BLADE;
@@ -81,11 +96,11 @@ Route::middleware('web')->get('/{mode?}', function (string $mode = 'default') {
     $html = Blade::render(<<<'BLADE'
 <!doctype html>
 <html><head><meta name="csrf-token" content="{{ csrf_token() }}">@livewireStyles</head><body>
-<livewire:browser-honeypot :custom="$custom" />
+<livewire:browser-honeypot :custom="$custom" :redirect-spam="$redirectSpam" />
 @if($multiple) <livewire:browser-honeypot :custom="true" /> @endif
 @livewireScripts
 </body></html>
-BLADE, ['custom' => $mode === 'custom', 'multiple' => $mode === 'multiple']);
+BLADE, ['custom' => $mode === 'custom', 'multiple' => $mode === 'multiple', 'redirectSpam' => $mode === 'redirect']);
 
     $policy = "default-src 'self'; script-src 'self' 'nonce-browser-test-nonce'";
     if (! config('livewire.csp_safe')) {

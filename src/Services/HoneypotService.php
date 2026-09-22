@@ -4,6 +4,7 @@ namespace Blendbyte\LivewireHoneypot\Services;
 
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\HoneypotConfig;
+use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
@@ -162,15 +163,18 @@ class HoneypotService
                 userAgent: request()->userAgent(),
             ));
 
-            if ($reason === 'honeypot_filled') {
-                $message = $errors[$fieldName][0];
+            /** @var \Blendbyte\LivewireHoneypot\Contracts\SpamResponder $responder */
+            $responder = app(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
 
-                /** @var \Blendbyte\LivewireHoneypot\Contracts\SpamResponder $responder */
-                $responder = app(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
-                $responder->respond($fieldName, $message);
+            // Preserve the default metadata error bag without bypassing subclass overrides.
+            if ($reason === 'invalid_form_data' && $responder::class === ValidationExceptionResponder::class) {
+                throw $e;
             }
 
-            throw $e;
+            $responder->respond(
+                $fieldName,
+                $errors[$fieldName][0] ?? __('livewire-honeypot::validation.invalid_form_data'),
+            );
         }
 
         // JS verification: field must be populated by Alpine.js on page load

@@ -3,10 +3,13 @@
 namespace Blendbyte\LivewireHoneypot;
 
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
+use Blendbyte\LivewireHoneypot\Exceptions\HoneypotRedirectException;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Component;
+use Livewire\Livewire;
 
 class HoneypotServiceProvider extends ServiceProvider
 {
@@ -25,6 +28,14 @@ class HoneypotServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Terminate the rejected action, then let Livewire serialize its redirect effect.
+        Livewire::listen('exception', static function ($component, $exception, $stopPropagation): void {
+            if ($component instanceof Component && $exception instanceof HoneypotRedirectException) {
+                $component->redirect($exception->url);
+                $stopPropagation();
+            }
+        });
+
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'livewire-honeypot');
         $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'livewire-honeypot');
 

@@ -5,7 +5,9 @@ namespace Blendbyte\LivewireHoneypot\Traits;
 use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\HoneypotConfig;
+use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
@@ -126,7 +128,7 @@ trait HasHoneypot
         }
 
         // Form objects do not run the component's mount hook.
-        // Components with missing metadata must still receive validation errors.
+        // Components with missing metadata still follow the normal rejection path.
         if ($this->hp_started_at === 0 && ! ($this instanceof Component)) {
             throw new \LogicException(
                 'LivewireHoneypot: Use the HasHoneypot trait on the Livewire component, not on a form object. ' .
@@ -139,9 +141,15 @@ trait HasHoneypot
         $minimumFillSeconds = $minimumSeconds ?? (int) $this->getHoneypotConfig('minimum_fill_seconds');
         $now = now()->getTimestamp();
 
+        // Validate only honeypot state without consuming application validation hooks.
+        $rootField = explode('.', $fieldName)[0];
+        $data = $this->unwrapDataForValidation(
+            Arr::only($this->all(), [$rootField, 'hp_started_at', 'hp_token']),
+        );
+
         try {
             // Require presence & emptiness of the bait field, plus meta fields
-            $this->validate([
+            validator($data, [
                 $fieldName => 'present|size:0',
                 'hp_started_at' => ['required', 'integer', 'min:' . ($now - 3600), 'max:' . $now],
                 'hp_token' => "required|string|min:{$tokenMinLength}",
@@ -149,7 +157,7 @@ trait HasHoneypot
                 "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
                 'hp_started_at.min' => __('livewire-honeypot::validation.invalid_form_data'),
                 'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
-            ]);
+            ])->validate();
         } catch (ValidationException $e) {
             $errors = $e->errors();
             $reason = isset($errors[$fieldName]) ? 'honeypot_filled' : 'invalid_form_data';
@@ -162,7 +170,19 @@ trait HasHoneypot
                 component: static::class,
             ));
 
-            throw $e;
+            /** @var SpamResponder $responder */
+            $responder = app(SpamResponder::class);
+
+            // Keep the original error keys and failed rules for the built-in default.
+            // An exact class check ensures subclass overrides are still invoked.
+            if ($responder::class === ValidationExceptionResponder::class) {
+                throw $e;
+            }
+
+            $responder->respond(
+                $fieldName,
+                $errors[$fieldName][0] ?? __('livewire-honeypot::validation.invalid_form_data'),
+            );
         }
 
         // JS verification: field must be populated by Alpine.js on page load
@@ -195,5 +215,7 @@ trait HasHoneypot
             $responder = app(SpamResponder::class);
             $responder->respond($fieldName, __('livewire-honeypot::validation.submitted_too_quickly'));
         }
+
+        $this->resetValidation([$fieldName, 'hp_started_at', 'hp_token']);
     }
 }
