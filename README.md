@@ -108,7 +108,7 @@ $this->validateHoneypotForModel('contact.trap');
 $this->resetHoneypotForModel('contact.trap');
 ```
 
-This also works with `form.trap` on a Livewire form object. If you change the global `field_name`, declare a matching public property on the component.
+This also works with `form.trap` on a Livewire form object. If you change `field_name` globally or through `honeypotConfig()`, declare a matching public property on the component. The default `<x-honeypot />` binding follows that setting automatically.
 
 ### Randomized HTML names
 
