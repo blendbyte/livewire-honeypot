@@ -46,7 +46,7 @@ test('validate() still throws when fake mode is not active', function () {
     $data = [
         $this->fieldName => 'filled by bot',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -59,7 +59,7 @@ test('validate() resumes normal behaviour after resetFake()', function () {
     $data = [
         $this->fieldName => 'filled by bot',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);

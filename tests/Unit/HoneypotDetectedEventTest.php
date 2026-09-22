@@ -51,7 +51,7 @@ test('it dispatches HoneypotDetected when honeypot field is filled', function ()
     $data = [
         $this->fieldName => 'spam content',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     try {
@@ -70,7 +70,7 @@ test('it dispatches HoneypotDetected when submitted too quickly', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at'  => now()->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->getTimestamp()),
     ];
 
     try {
@@ -88,7 +88,7 @@ test('it dispatches HoneypotDetected when form data is invalid', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at'  => 0,
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(0),
     ];
 
     try {
@@ -106,7 +106,7 @@ test('it does not dispatch HoneypotDetected on a valid submission', function () 
     $data = [
         $this->fieldName => '',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -120,7 +120,7 @@ test('it still throws ValidationException after dispatching the event', function
     $data = [
         $this->fieldName => 'spam',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     expect(fn () => $this->service->validate($data))

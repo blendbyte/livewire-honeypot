@@ -3,6 +3,7 @@
 namespace Blendbyte\LivewireHoneypot\Services;
 
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
+use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
@@ -40,12 +41,85 @@ class HoneypotService
     public function generate(): array
     {
         $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+        $startedAt = now()->getTimestamp();
 
         return [
             $fieldName => '',
-            'hp_started_at' => now()->getTimestamp(),
-            'hp_token' => Str::random(config('livewire-honeypot.token_length', 24)),
+            'hp_started_at' => $startedAt,
+            'hp_token' => $this->token($startedAt),
         ];
+    }
+
+    /**
+     * Sign a plain form's random nonce and start time with the current app key.
+     * The optional timestamp is for trusted server-side use only.
+     */
+    public function token(?int $startedAt = null): string
+    {
+        $key = $this->signingKeys()[0];
+        $payload = Str::random(max(1, (int) config('livewire-honeypot.token_length', 24)))
+            . '.' . ($startedAt ?? now()->getTimestamp());
+
+        return $payload . '.' . $this->sign($payload, $key);
+    }
+
+    /**
+     * Return the authenticated start time, or null for an invalid token.
+     * Form age is checked by validate(), not by this method.
+     */
+    public function startedAtFromToken(mixed $token): ?int
+    {
+        $keys = $this->signingKeys();
+
+        if (! is_string($token) || substr_count($token, '.') !== 2) {
+            return null;
+        }
+
+        [$nonce, $timestamp, $signature] = explode('.', $token);
+
+        if (! ctype_alnum($nonce)
+            || strlen($nonce) < max(1, (int) config('livewire-honeypot.token_min_length', 10))
+            || ! ctype_digit($timestamp)
+            || strlen($signature) !== 64
+        ) {
+            return null;
+        }
+
+        $startedAt = filter_var($timestamp, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+        if ($startedAt === false) {
+            return null;
+        }
+
+        foreach ($keys as $key) {
+            if (hash_equals($this->sign($nonce . '.' . $timestamp, $key), $signature)) {
+                return $startedAt;
+            }
+        }
+
+        return null;
+    }
+
+    /** @return non-empty-list<string> */
+    private function signingKeys(): array
+    {
+        $key = config('app.key');
+
+        if (! is_string($key) || $key === '') {
+            throw new MissingAppKeyException();
+        }
+
+        $previousKeys = array_filter(
+            (array) config('app.previous_keys', []),
+            static fn (mixed $value): bool => is_string($value) && $value !== '',
+        );
+
+        return array_values(array_unique([$key, ...$previousKeys]));
+    }
+
+    private function sign(string $payload, string $key): string
+    {
+        return hash_hmac('sha256', 'livewire-honeypot|' . $payload, $key);
     }
 
     public function validate(array $data, ?int $minimumSeconds = null): void
@@ -56,14 +130,21 @@ class HoneypotService
 
         $fieldName = config('livewire-honeypot.field_name', 'hp_website');
         $minimumSeconds = $minimumSeconds ?? config('livewire-honeypot.minimum_fill_seconds', 5);
-        $tokenMinLength = config('livewire-honeypot.token_min_length', 10);
         $now = now()->getTimestamp();
+        $startedAt = $this->startedAtFromToken($data['hp_token'] ?? null);
+
+        // Never trust a timestamp supplied separately by the client.
+        $data['hp_started_at'] = $startedAt;
 
         try {
             validator($data, [
                 $fieldName => 'present|size:0',
                 'hp_started_at' => ['required', 'integer', 'min:' . ($now - 3600), 'max:' . $now],
-                'hp_token' => "required|string|min:{$tokenMinLength}",
+                'hp_token' => ['required', 'string', function ($attribute, $value, $fail) use ($startedAt): void {
+                    if ($startedAt === null) {
+                        $fail(__('livewire-honeypot::validation.invalid_form_data'));
+                    }
+                }],
             ], [
                 "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
                 'hp_started_at.min' => __('livewire-honeypot::validation.invalid_form_data'),

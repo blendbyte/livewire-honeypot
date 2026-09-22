@@ -97,12 +97,12 @@ That's it — bots get blocked, real users never notice.
 
 ## How It Works
 
-1. On page load, the trait/service generates a Unix timestamp (`hp_started_at`) and a cryptographically random token (`hp_token`). In Livewire, both are `#[Locked]` properties: Livewire carries them in its signed snapshot and rejects client updates. Plain controller forms pass them to the view as hidden inputs.
+1. On page load, the trait/service generates a Unix timestamp (`hp_started_at`) and a cryptographically random token (`hp_token`). In Livewire, both are `#[Locked]` properties: Livewire carries them in its signed snapshot and rejects client updates. For plain controller forms, the service signs the timestamp and a random nonce with `APP_KEY` and returns them together as `hp_token`.
 2. The Blade component renders the bait field, which is visually positioned offscreen via CSS. Livewire needs no timestamp or token inputs. If `randomize_field_name` is enabled, the bait field's HTML `name` is randomised each page load.
 3. On submission, `validateHoneypot()` / `HoneypotService::validate()` checks:
    - The bait field is **empty** (bots usually fill every visible and hidden input).
-   - `hp_started_at` falls within the last hour (guards against replayed or stale forms).
-   - `hp_token` meets the minimum length (guards against manually crafted requests).
+   - The start time falls within the last hour. Livewire uses its locked timestamp; the service reads the timestamp from the signed token and ignores any separately posted `hp_started_at`.
+   - In Livewire, `hp_token` meets the minimum length. In plain forms, the token must have a valid HMAC-SHA256 signature and its random nonce must meet the minimum length.
    - If `require_js_verification` is enabled, `hp_js` must be **non-empty** — Alpine.js populates this field on page load; bots without JavaScript execution leave it empty.
    - Enough time has elapsed since page load (time-trap).
 4. Any failure fires a `HoneypotDetected` event (and optionally writes a log entry), then delegates to the configured `SpamResponder`.
@@ -208,7 +208,6 @@ public function store(Request $request, HoneypotService $honeypot): RedirectResp
 {
     $honeypot->validate($request->only(
         config('livewire-honeypot.field_name', 'hp_website'),
-        'hp_started_at',
         'hp_token',
     ));
 
@@ -222,7 +221,7 @@ To generate the initial honeypot data server-side and pass it to a Blade view:
 
 ```php
 $hp = app(HoneypotService::class)->generate();
-// Returns: ['hp_website' => '', 'hp_started_at' => 1234567890, 'hp_token' => 'abc...']
+// Returns: ['hp_website' => '', 'hp_started_at' => 1234567890, 'hp_token' => 'nonce.timestamp.signature']
 return view('contact', compact('hp'));
 ```
 
@@ -232,7 +231,6 @@ Then in your Blade template, use the values as hidden inputs:
 <form method="POST" action="/contact">
     @csrf
     <input type="text"   name="hp_website"    value="{{ $hp['hp_website'] }}"    style="display:none" tabindex="-1" autocomplete="off">
-    <input type="hidden" name="hp_started_at" value="{{ $hp['hp_started_at'] }}">
     <input type="hidden" name="hp_token"      value="{{ $hp['hp_token'] }}">
 
     {{-- your regular fields --}}
@@ -244,6 +242,14 @@ Then in your Blade template, use the values as hidden inputs:
 ```php
 $honeypot->validate($data, minimumSeconds: 10);
 ```
+
+The service authenticates the token before using its timestamp for the time-trap and one-hour expiry. `generate()` still returns `hp_started_at` for compatibility, but you no longer need to submit it. Changing that posted field cannot change the authenticated start time.
+
+For custom server-side integrations, `token()` creates a signed token and `startedAtFromToken($token)` returns its authenticated timestamp, or `null` if verification fails. Use `validate()` for submissions: it also checks the bait field, form age, minimum fill time, and optional JS verification. The optional timestamp argument to `token($startedAt)` must come from trusted server-side code.
+
+Signing requires `APP_KEY`; generation and verification throw `Illuminate\Encryption\MissingAppKeyException` when it is missing. After rotating the key, retain the old key in Laravel's `APP_PREVIOUS_KEYS` so forms already open can still be submitted. New tokens always use the current key.
+
+**Upgrading plain forms:** generate tokens with `HoneypotService::generate()` or `token()` rather than `Str::random()`. Unsigned tokens from forms opened before deployment will be rejected, so those pages must be reloaded. The signed token is longer than `token_length`, which now controls only its random nonce for plain forms; do not truncate it. Tokens are not single-use and can be replayed within the one-hour lifetime, so keep CSRF protection and rate limiting in place.
 
 ## Blade Component
 
@@ -258,7 +264,7 @@ The component uses `aria-hidden="true"` and `tabindex="-1"` so it is invisible t
 
 The timestamp (`hp_started_at`) and token (`hp_token`) are locked Livewire properties and are not rendered as inputs. Server-side calls to `resetHoneypot()` can still refresh both values.
 
-If you previously published or copied the Blade view, remove the `hp_started_at` and `hp_token` inputs from your Livewire form. Their old `wire:model` bindings target properties that now reject client updates. Keep the hidden inputs in plain controller forms as shown above.
+If you previously published or copied the Blade view, remove the `hp_started_at` and `hp_token` inputs from your Livewire form. Their old `wire:model` bindings target properties that now reject client updates. Plain controller forms still need the signed `hp_token` input shown above.
 
 ## Configuration
 
@@ -278,10 +284,10 @@ return [
     // Name of the honeypot bait field
     'field_name' => env('HONEYPOT_FIELD_NAME', 'hp_website'),
 
-    // Minimum accepted length of the token on validation
+    // Minimum token length in Livewire, or nonce length in signed plain-form tokens
     'token_min_length' => env('HONEYPOT_TOKEN_MIN_LENGTH', 10),
 
-    // Length of the token generated on page load
+    // Token length in Livewire, or nonce length in signed plain-form tokens
     'token_length' => env('HONEYPOT_TOKEN_LENGTH', 24),
 
     // Randomise the HTML name attribute of the bait field on each page load
@@ -309,8 +315,8 @@ return [
 |---------------------------------|--------------|-----------------------------------------------------------------|
 | `HONEYPOT_MINIMUM_FILL_SECONDS` | `5`          | Seconds required before a submission is accepted                |
 | `HONEYPOT_FIELD_NAME`           | `hp_website` | Name of the bait input field                                    |
-| `HONEYPOT_TOKEN_MIN_LENGTH`     | `10`         | Minimum token length accepted during validation                 |
-| `HONEYPOT_TOKEN_LENGTH`         | `24`         | Length of the generated token                                   |
+| `HONEYPOT_TOKEN_MIN_LENGTH`     | `10`         | Minimum Livewire token length or signed plain-form nonce length |
+| `HONEYPOT_TOKEN_LENGTH`         | `24`         | Livewire token length or signed plain-form nonce length         |
 | `HONEYPOT_RANDOMIZE_FIELD_NAME` | `false`      | Randomise the HTML `name` of the bait field each page load      |
 | `HONEYPOT_LOGGING`              | `false`      | Enable structured log entries on spam detection                 |
 | `HONEYPOT_LOG_CHANNEL`          | *(default)*  | Laravel logging channel to write to (`null` = app default)      |

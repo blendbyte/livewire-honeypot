@@ -22,7 +22,8 @@ test('it generates honeypot fields', function () {
 
     expect($fields[$this->fieldName])->toBe('');
     expect($fields['hp_started_at'])->toBeInt();
-    expect($fields['hp_token'])->toBeString()->toHaveLength(24);
+    expect(explode('.', $fields['hp_token'])[0])->toHaveLength(24);
+    expect($this->service->startedAtFromToken($fields['hp_token']))->toBe($fields['hp_started_at']);
 });
 
 test('it respects token_length config when generating', function () {
@@ -30,7 +31,7 @@ test('it respects token_length config when generating', function () {
 
     $fields = $this->service->generate();
 
-    expect($fields['hp_token'])->toHaveLength(32);
+    expect(explode('.', $fields['hp_token'])[0])->toHaveLength(32);
 });
 
 test('it sets hp_started_at to the current unix timestamp', function () {
@@ -60,7 +61,7 @@ test('it validates valid honeypot data', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -72,7 +73,7 @@ test('it respects custom minimum seconds parameter', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->subSeconds(2)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(2)->getTimestamp()),
     ];
 
     $this->service->validate($data, 1);
@@ -86,7 +87,7 @@ test('it passes when minimum_fill_seconds is zero via config', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -98,7 +99,7 @@ test('it passes when minimum_fill_seconds is zero via parameter', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->getTimestamp()),
     ];
 
     $this->service->validate($data, 0);
@@ -114,7 +115,7 @@ test('it fails when honeypot field is filled', function () {
     $data = [
         $this->fieldName => 'https://spam.com',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -123,7 +124,7 @@ test('it fails when honeypot field is filled', function () {
 test('it fails when hp_website key is missing entirely', function () {
     $data = [
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -135,7 +136,7 @@ test('it uses configured field_name in validate', function () {
     $data = [
         'my_trap'       => 'spam',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -145,11 +146,11 @@ test('it uses configured field_name in validate', function () {
 // validate() — time-trap
 // ---------------------------------------------------------------------------
 
-test('it fails when hp_started_at is zero', function () {
+test('it fails when the signed timestamp is zero', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => 0,
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(0),
     ];
 
     $this->service->validate($data);
@@ -159,50 +160,46 @@ test('it fails when submitted too quickly', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->getTimestamp()),
     ];
 
     $this->service->validate($data);
 })->throws(ValidationException::class);
 
-test('it fails when hp_started_at is in the future', function () {
+test('it fails when the signed timestamp is in the future', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->addMinutes(5)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->addMinutes(5)->getTimestamp()),
     ];
 
     $this->service->validate($data);
 })->throws(ValidationException::class);
 
-test('it fails when hp_started_at is too old', function () {
+test('it fails when the signed timestamp is too old', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->subHours(2)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subHours(2)->getTimestamp()),
     ];
 
     $this->service->validate($data);
 })->throws(ValidationException::class);
 
-test('it fails when hp_started_at is missing', function () {
-    $data = [
+test('it accepts a signed token without a separately posted timestamp', function () {
+    $this->service->validate([
         $this->fieldName => '',
-        'hp_token'   => str_repeat('a', 24),
-    ];
+        'hp_token' => $this->service->token(now()->subSeconds(10)->getTimestamp()),
+    ]);
+})->throwsNoExceptions();
 
-    $this->service->validate($data);
-})->throws(ValidationException::class);
-
-test('it fails when hp_started_at is not an integer', function () {
-    $data = [
+test('it ignores a malformed separately posted timestamp', function () {
+    $this->service->validate([
         $this->fieldName => '',
-        'hp_started_at' => 'not-a-timestamp',
-        'hp_token'      => str_repeat('a', 24),
-    ];
-
-    $this->service->validate($data);
-})->throws(ValidationException::class);
+        'hp_started_at' => ['not-a-timestamp'],
+        'hp_token' => $this->service->token(now()->subSeconds(10)->getTimestamp()),
+    ]);
+})->throwsNoExceptions();
 
 // ---------------------------------------------------------------------------
 // validate() — token
@@ -238,12 +235,12 @@ test('it fails when hp_token key is missing entirely', function () {
 })->throws(ValidationException::class);
 
 test('it respects custom token_min_length config', function () {
-    config(['livewire-honeypot.token_min_length' => 15]);
+    config(['livewire-honeypot.token_min_length' => 15, 'livewire-honeypot.token_length' => 12]);
 
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 12),
+        'hp_token'      => $this->service->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -257,7 +254,7 @@ test('it throws spam_detected error on filled honeypot field', function () {
     $data = [
         $this->fieldName => 'spam',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     expect(fn () => $this->service->validate($data))
@@ -268,7 +265,7 @@ test('it throws submitted_too_quickly error on time-trap', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->getTimestamp()),
     ];
 
     expect(fn () => $this->service->validate($data))
@@ -281,7 +278,7 @@ test('it translates spam_detected to Dutch', function () {
     $data = [
         $this->fieldName => 'spam',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     expect(fn () => $this->service->validate($data))
@@ -294,7 +291,7 @@ test('it translates submitted_too_quickly to Dutch', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->getTimestamp()),
     ];
 
     expect(fn () => $this->service->validate($data))
@@ -307,7 +304,7 @@ test('it translates spam_detected to German', function () {
     $data = [
         $this->fieldName => 'spam',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     expect(fn () => $this->service->validate($data))
@@ -320,7 +317,7 @@ test('it translates submitted_too_quickly to German', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at' => now()->getTimestamp(),
-        'hp_token'      => str_repeat('a', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->getTimestamp()),
     ];
 
     expect(fn () => $this->service->validate($data))

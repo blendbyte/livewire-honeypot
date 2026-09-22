@@ -32,8 +32,8 @@ return [
     | Token Minimum Length
     |--------------------------------------------------------------------------
     |
-    | The minimum length for the honeypot token. This adds an extra
-    | layer of validation to ensure the form was properly initialized.
+    | The minimum length for the locked Livewire token, or the random nonce
+    | inside a signed plain-form token. Plain forms also require a valid signature.
     |
     */
 
@@ -44,7 +44,8 @@ return [
     | Token Length
     |--------------------------------------------------------------------------
     |
-    | The length of the generated honeypot token.
+    | The length of the generated Livewire token, or the random nonce inside
+    | a signed plain-form token. The full signed token is longer than this value.
     |
     */
 

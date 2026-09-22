@@ -14,7 +14,7 @@ test('js verification passes when hp_js is populated', function () {
     $data = [
         config('livewire-honeypot.field_name', 'hp_website') => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('x', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
         'hp_js'         => base64_encode((string) time()),
     ];
 
@@ -35,7 +35,7 @@ test('js verification fails when hp_js is empty', function () {
     $data = [
         $fieldName      => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('x', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
         'hp_js'         => '',
     ];
 
@@ -55,7 +55,7 @@ test('js verification fails when hp_js is missing from data', function () {
     $data = [
         $fieldName      => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('x', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     expect(fn () => $service->validate($data))
@@ -74,7 +74,7 @@ test('js verification fails when hp_js is whitespace only', function () {
     $data = [
         $fieldName      => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('x', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
         'hp_js'         => '   ',
     ];
 
@@ -94,7 +94,7 @@ test('js verification is skipped when disabled', function () {
     $data = [
         $fieldName      => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => str_repeat('x', 24),
+        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
         'hp_js'         => '', // empty — but check is disabled
     ];
 
@@ -125,7 +125,7 @@ test('js verification failure dispatches HoneypotDetected event with correct rea
         $service->validate([
             $fieldName      => '',
             'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-            'hp_token'      => str_repeat('x', 24),
+            'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
             'hp_js'         => '',
         ]);
     } catch (\Throwable) {

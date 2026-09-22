@@ -50,7 +50,7 @@ test('it does not log when logging is disabled', function () {
     $data = [
         $this->fieldName => 'spam',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     try { $this->service->validate($data); } catch (ValidationException) {}
@@ -72,7 +72,7 @@ test('it logs at warning level when honeypot field is filled', function () {
     $data = [
         $this->fieldName => 'spam content',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     try { $this->service->validate($data); } catch (ValidationException) {}
@@ -92,7 +92,7 @@ test('it logs at warning level when submitted too quickly', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at'  => now()->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->getTimestamp()),
     ];
 
     try { $this->service->validate($data); } catch (ValidationException) {}
@@ -115,7 +115,7 @@ test('it logs at configured level', function () {
     $data = [
         $this->fieldName => 'spam',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     try { $this->service->validate($data); } catch (ValidationException) {}
@@ -134,7 +134,7 @@ test('it logs the correct context fields', function () {
     $data = [
         $this->fieldName => 'spam',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     try { $this->service->validate($data); } catch (ValidationException) {}
@@ -158,7 +158,7 @@ test('it does not log on a valid submission', function () {
     $data = [
         $this->fieldName => '',
         'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => str_repeat('a', 24),
+        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
