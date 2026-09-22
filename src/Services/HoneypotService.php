@@ -3,6 +3,7 @@
 namespace Blendbyte\LivewireHoneypot\Services;
 
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
+use Blendbyte\LivewireHoneypot\HoneypotConfig;
 use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
@@ -40,7 +41,7 @@ class HoneypotService
 
     public function generate(): array
     {
-        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+        $fieldName = HoneypotConfig::get('field_name');
         $startedAt = now()->getTimestamp();
 
         return [
@@ -57,7 +58,7 @@ class HoneypotService
     public function token(?int $startedAt = null): string
     {
         $key = $this->signingKeys()[0];
-        $payload = Str::random(max(1, (int) config('livewire-honeypot.token_length', 24)))
+        $payload = Str::random(max(1, (int) HoneypotConfig::get('token_length')))
             . '.' . ($startedAt ?? now()->getTimestamp());
 
         return $payload . '.' . $this->sign($payload, $key);
@@ -78,7 +79,7 @@ class HoneypotService
         [$nonce, $timestamp, $signature] = explode('.', $token);
 
         if (! ctype_alnum($nonce)
-            || strlen($nonce) < max(1, (int) config('livewire-honeypot.token_min_length', 10))
+            || strlen($nonce) < max(1, (int) HoneypotConfig::get('token_min_length'))
             || ! ctype_digit($timestamp)
             || strlen($signature) !== 64
         ) {
@@ -128,8 +129,8 @@ class HoneypotService
             return;
         }
 
-        $fieldName = config('livewire-honeypot.field_name', 'hp_website');
-        $minimumSeconds = $minimumSeconds ?? config('livewire-honeypot.minimum_fill_seconds', 5);
+        $fieldName = HoneypotConfig::get('field_name');
+        $minimumSeconds = $minimumSeconds ?? HoneypotConfig::get('minimum_fill_seconds');
         $now = now()->getTimestamp();
         $startedAt = $this->startedAtFromToken($data['hp_token'] ?? null);
 
@@ -173,7 +174,7 @@ class HoneypotService
         }
 
         // JS verification: field must be populated by Alpine.js on page load
-        if (config('livewire-honeypot.require_js_verification', false) && trim((string) ($data['hp_js'] ?? '')) === '') {
+        if (HoneypotConfig::get('require_js_verification') && trim((string) ($data['hp_js'] ?? '')) === '') {
             event(new HoneypotDetected(
                 fieldName: $fieldName,
                 reason: 'js_verification_failed',

@@ -3,7 +3,7 @@
 @props(['fieldName' => null, 'errorKey' => null, 'nonce' => null])
 @php
     $cspNonce = $nonce ?? \Illuminate\Support\Facades\Vite::cspNonce();
-    $staticFieldName = config('livewire-honeypot.field_name', 'hp_website');
+    $staticFieldName = \Blendbyte\LivewireHoneypot\HoneypotConfig::get('field_name');
     $displayName = $fieldName ?? $staticFieldName;
     $modelAttributes = $attributes->whereStartsWith('wire:model');
     $errorKeys = [$errorKey ?? $modelAttributes->first() ?? $staticFieldName, 'hp_started_at', 'hp_token'];
@@ -35,7 +35,7 @@
                data-bwignore="true"
                data-form-type="other" />
     </label>
-    @if(config('livewire-honeypot.require_js_verification', false))
+    @if(\Blendbyte\LivewireHoneypot\HoneypotConfig::get('require_js_verification'))
     <input type="hidden"
            name="hp_js"
            wire:model="hp_js"

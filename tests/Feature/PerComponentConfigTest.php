@@ -93,6 +93,25 @@ test('honeypotConfig returns empty array by default', function () {
     $component->assertHasNoErrors();
 });
 
+test('falsy component overrides take precedence while null uses current global config', function () {
+    config([
+        'livewire-honeypot.minimum_fill_seconds' => 30,
+        'livewire-honeypot.require_js_verification' => true,
+        'livewire-honeypot.randomize_field_name' => true,
+        'livewire-honeypot.token_length' => 32,
+    ]);
+
+    $component = Livewire::test(FalsyConfigComponent::class);
+    expect($component->hp_token)->toHaveLength(32);
+    $component->assertSet('hp_field_name', 'hp_website')->assertSet('hp_js', '');
+    $component->call('submit')->assertHasNoErrors();
+
+    config(['livewire-honeypot.token_length' => 40]);
+    $component->call('submit')->assertHasNoErrors();
+    expect($component->hp_token)->toHaveLength(40);
+    expect(config('livewire-honeypot.minimum_fill_seconds'))->toBe(30);
+});
+
 // ---------------------------------------------------------------------------
 // Test components
 // ---------------------------------------------------------------------------
@@ -108,6 +127,19 @@ class DefaultConfigComponent extends Component
     }
 
     public function render(): string { return '<div></div>'; }
+}
+
+class FalsyConfigComponent extends DefaultConfigComponent
+{
+    protected function honeypotConfig(): array
+    {
+        return [
+            'minimum_fill_seconds' => 0,
+            'require_js_verification' => false,
+            'randomize_field_name' => false,
+            'token_length' => null,
+        ];
+    }
 }
 
 class FastFormComponent extends Component

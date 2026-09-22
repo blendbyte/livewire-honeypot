@@ -4,6 +4,7 @@ namespace Blendbyte\LivewireHoneypot\Traits;
 
 use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
+use Blendbyte\LivewireHoneypot\HoneypotConfig;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -51,12 +52,12 @@ trait HasHoneypot
      */
     private function getHoneypotConfig(string $key, mixed $default = null): mixed
     {
-        return $this->honeypotConfig()[$key] ?? config("livewire-honeypot.{$key}", $default);
+        return $this->honeypotConfig()[$key] ?? HoneypotConfig::get($key, $default);
     }
 
     public function mountHasHoneypot(): void
     {
-        $fieldName = (string) $this->getHoneypotConfig('field_name', 'hp_website');
+        $fieldName = (string) $this->getHoneypotConfig('field_name');
 
         if ($fieldName !== 'hp_website' && ! property_exists($this, $fieldName)) {
             throw new \LogicException(
@@ -73,14 +74,14 @@ trait HasHoneypot
      */
     protected function resetHoneypot(): void
     {
-        $fieldName = (string) $this->getHoneypotConfig('field_name', 'hp_website');
+        $fieldName = (string) $this->getHoneypotConfig('field_name');
         $this->$fieldName = '';
 
         $this->hp_started_at = now()->getTimestamp();
-        $this->hp_token = Str::random((int) $this->getHoneypotConfig('token_length', 24));
+        $this->hp_token = Str::random((int) $this->getHoneypotConfig('token_length'));
         $this->hp_js = '';
 
-        $this->hp_field_name = (bool) $this->getHoneypotConfig('randomize_field_name', false)
+        $this->hp_field_name = (bool) $this->getHoneypotConfig('randomize_field_name')
             ? 'hp_' . Str::lower(Str::random(6))
             : $fieldName;
     }
@@ -101,7 +102,7 @@ trait HasHoneypot
         }
 
         $this->validateHoneypotForModel(
-            (string) $this->getHoneypotConfig('field_name', 'hp_website'),
+            (string) $this->getHoneypotConfig('field_name'),
             $minimumSeconds,
         );
     }
@@ -125,8 +126,8 @@ trait HasHoneypot
         }
 
         $fieldName = $model;
-        $tokenMinLength = (int) $this->getHoneypotConfig('token_min_length', 10);
-        $minimumFillSeconds = $minimumSeconds ?? (int) $this->getHoneypotConfig('minimum_fill_seconds', 5);
+        $tokenMinLength = (int) $this->getHoneypotConfig('token_min_length');
+        $minimumFillSeconds = $minimumSeconds ?? (int) $this->getHoneypotConfig('minimum_fill_seconds');
         $now = now()->getTimestamp();
 
         try {
@@ -156,7 +157,7 @@ trait HasHoneypot
         }
 
         // JS verification: field must be populated by Alpine.js on page load
-        if ((bool) $this->getHoneypotConfig('require_js_verification', false) && trim($this->hp_js) === '') {
+        if ((bool) $this->getHoneypotConfig('require_js_verification') && trim($this->hp_js) === '') {
             event(new HoneypotDetected(
                 fieldName: $fieldName,
                 reason: 'js_verification_failed',

@@ -19,10 +19,7 @@ class HoneypotServiceProvider extends ServiceProvider
 
         $this->app->bind(
             \Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class,
-            static fn () => app(config(
-                'livewire-honeypot.spam_responder',
-                \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class
-            ))
+            static fn () => app(HoneypotConfig::get('spam_responder'))
         );
     }
 
@@ -50,8 +47,8 @@ class HoneypotServiceProvider extends ServiceProvider
         ], 'livewire-honeypot-config');
 
         // Guard against misconfigured token lengths
-        $tokenLength    = (int) config('livewire-honeypot.token_length', 24);
-        $tokenMinLength = (int) config('livewire-honeypot.token_min_length', 10);
+        $tokenLength    = (int) HoneypotConfig::get('token_length');
+        $tokenMinLength = (int) HoneypotConfig::get('token_min_length');
 
         if ($tokenLength < $tokenMinLength) {
             throw new \InvalidArgumentException(
@@ -62,10 +59,10 @@ class HoneypotServiceProvider extends ServiceProvider
         }
 
         // Register structured logging listener when enabled
-        if (config('livewire-honeypot.logging.enabled', false)) {
+        if (HoneypotConfig::get('logging.enabled')) {
             Event::listen(HoneypotDetected::class, static function (HoneypotDetected $event): void {
-                $level   = (string) config('livewire-honeypot.logging.level', 'warning');
-                $channel = config('livewire-honeypot.logging.channel');
+                $level   = (string) HoneypotConfig::get('logging.level');
+                $channel = HoneypotConfig::get('logging.channel');
 
                 $context = [
                     'reason'     => $event->reason,

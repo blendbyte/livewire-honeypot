@@ -19,16 +19,6 @@ abstract class TestCase extends Orchestra
 
     protected function getEnvironmentSetUp($app): void
     {
-        // Setup default config
-        $app['config']->set('livewire-honeypot.minimum_fill_seconds', 5);
-        $app['config']->set('livewire-honeypot.field_name', 'hp_website');
-        $app['config']->set('livewire-honeypot.token_min_length', 10);
-        $app['config']->set('livewire-honeypot.token_length', 24);
-        $app['config']->set('livewire-honeypot.randomize_field_name', false);
-        $app['config']->set('livewire-honeypot.logging.enabled', false);
-        $app['config']->set('livewire-honeypot.spam_responder', \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class);
-        $app['config']->set('livewire-honeypot.require_js_verification', false);
-
         // Setup app key for encryption
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
     }

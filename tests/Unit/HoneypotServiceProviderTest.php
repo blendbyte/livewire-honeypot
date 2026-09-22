@@ -10,8 +10,7 @@ use Illuminate\Support\ServiceProvider;
 // ---------------------------------------------------------------------------
 
 test('it merges the package config', function () {
-    // The service provider merges defaults; TestCase sets explicit values,
-    // so verify that all expected keys are present and have correct types.
+    // No package settings are injected by TestCase, so these come from the provider.
     expect(config('livewire-honeypot.minimum_fill_seconds'))->toBeInt();
     expect(config('livewire-honeypot.field_name'))->toBeString();
     expect(config('livewire-honeypot.token_min_length'))->toBeInt();

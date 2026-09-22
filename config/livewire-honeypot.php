@@ -1,5 +1,9 @@
 <?php
 
+use Blendbyte\LivewireHoneypot\HoneypotConfig;
+
+$defaults = HoneypotConfig::DEFAULTS;
+
 return [
 
     /*
@@ -13,7 +17,7 @@ return [
     |
     */
 
-    'minimum_fill_seconds' => (int) env('HONEYPOT_MINIMUM_FILL_SECONDS', 5),
+    'minimum_fill_seconds' => (int) env('HONEYPOT_MINIMUM_FILL_SECONDS', $defaults['minimum_fill_seconds']),
 
     /*
     |--------------------------------------------------------------------------
@@ -25,7 +29,7 @@ return [
     |
     */
 
-    'field_name' => env('HONEYPOT_FIELD_NAME', 'hp_website'),
+    'field_name' => env('HONEYPOT_FIELD_NAME', $defaults['field_name']),
 
     /*
     |--------------------------------------------------------------------------
@@ -37,7 +41,7 @@ return [
     |
     */
 
-    'token_min_length' => (int) env('HONEYPOT_TOKEN_MIN_LENGTH', 10),
+    'token_min_length' => (int) env('HONEYPOT_TOKEN_MIN_LENGTH', $defaults['token_min_length']),
 
     /*
     |--------------------------------------------------------------------------
@@ -49,7 +53,7 @@ return [
     |
     */
 
-    'token_length' => (int) env('HONEYPOT_TOKEN_LENGTH', 24),
+    'token_length' => (int) env('HONEYPOT_TOKEN_LENGTH', $defaults['token_length']),
 
     /*
     |--------------------------------------------------------------------------
@@ -64,7 +68,7 @@ return [
     |
     */
 
-    'randomize_field_name' => (bool) env('HONEYPOT_RANDOMIZE_FIELD_NAME', false),
+    'randomize_field_name' => (bool) env('HONEYPOT_RANDOMIZE_FIELD_NAME', $defaults['randomize_field_name']),
 
     /*
     |--------------------------------------------------------------------------
@@ -80,9 +84,9 @@ return [
     */
 
     'logging' => [
-        'enabled' => (bool) env('HONEYPOT_LOGGING', false),
-        'channel' => env('HONEYPOT_LOG_CHANNEL', null),
-        'level'   => env('HONEYPOT_LOG_LEVEL', 'warning'),
+        'enabled' => (bool) env('HONEYPOT_LOGGING', $defaults['logging']['enabled']),
+        'channel' => env('HONEYPOT_LOG_CHANNEL', $defaults['logging']['channel']),
+        'level'   => env('HONEYPOT_LOG_LEVEL', $defaults['logging']['level']),
     ],
 
     /*
@@ -100,7 +104,7 @@ return [
     |
     */
 
-    'spam_responder' => \Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder::class,
+    'spam_responder' => $defaults['spam_responder'],
 
     /*
     |--------------------------------------------------------------------------
@@ -117,6 +121,6 @@ return [
     |
     */
 
-    'require_js_verification' => (bool) env('HONEYPOT_JS_VERIFICATION', false),
+    'require_js_verification' => (bool) env('HONEYPOT_JS_VERIFICATION', $defaults['require_js_verification']),
 
 ];
