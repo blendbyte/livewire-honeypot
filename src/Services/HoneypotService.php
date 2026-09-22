@@ -174,7 +174,8 @@ class HoneypotService
         }
 
         // JS verification: field must be populated by Alpine.js on page load
-        if (HoneypotConfig::get('require_js_verification') && trim((string) ($data['hp_js'] ?? '')) === '') {
+        $jsMarker = $data['hp_js'] ?? null;
+        if (HoneypotConfig::get('require_js_verification') && (! is_string($jsMarker) || trim($jsMarker) === '')) {
             event(new HoneypotDetected(
                 fieldName: $fieldName,
                 reason: 'js_verification_failed',

@@ -2,6 +2,11 @@
 {{-- With randomized field name: <x-honeypot :field-name="$hp_field_name" /> --}}
 @props(['fieldName' => null, 'errorKey' => null, 'nonce' => null])
 @php
+    $honeypotComponent = isset($__livewire) && in_array(\Blendbyte\LivewireHoneypot\Traits\HasHoneypot::class, class_uses_recursive($__livewire), true)
+        ? $__livewire
+        : null;
+    $requiresJsVerification = $honeypotComponent?->isHoneypotJsVerificationRequired()
+        ?? \Blendbyte\LivewireHoneypot\HoneypotConfig::get('require_js_verification');
     $cspNonce = $nonce ?? \Illuminate\Support\Facades\Vite::cspNonce();
     $staticFieldName = \Blendbyte\LivewireHoneypot\HoneypotConfig::get('field_name');
     $displayName = $fieldName ?? $staticFieldName;
@@ -35,10 +40,13 @@
                data-bwignore="true"
                data-form-type="other" />
     </label>
-    @if(\Blendbyte\LivewireHoneypot\HoneypotConfig::get('require_js_verification'))
+    @if($requiresJsVerification)
     <input type="hidden"
            name="hp_js"
            wire:model="hp_js"
+           @if($honeypotComponent)
+               wire:key="hp-js-{{ $honeypotComponent->getId() }}-{{ $honeypotComponent->hp_token }}"
+           @endif
            x-data
            x-bind:value="'1'"
            x-init="$dispatch('input', '1')" />

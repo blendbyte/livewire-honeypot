@@ -118,11 +118,39 @@ test('per-component config can enable js verification', function () {
     ]);
 
     $component = Livewire::test(JsVerificationOverrideComponent::class);
+    $component->assertSeeHtml('name="hp_js"');
     $this->travel(10)->seconds();
     // hp_js empty — but component-level config enables it
     $component->call('submitWithJs');
 
     $component->assertHasErrors();
+});
+
+test('per-component config can disable globally enabled JS verification', function () {
+    config([
+        'livewire-honeypot.require_js_verification' => true,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
+    ]);
+
+    Livewire::test(JsVerificationDisabledComponent::class)
+        ->assertDontSeeHtml('name="hp_js"')
+        ->call('submitWithJs')
+        ->assertHasNoErrors();
+});
+
+test('JS input identity changes after a reset but remains stable on ordinary renders', function () {
+    config(['livewire-honeypot.minimum_fill_seconds' => 0]);
+    $component = Livewire::test(JsVerificationOverrideComponent::class);
+    $key = 'hp-js-' . $component->id() . '-' . $component->hp_token;
+    $component->assertSeeHtml('wire:key="' . $key . '"');
+    $component->call('$refresh')->assertSeeHtml('wire:key="' . $key . '"');
+
+    $component->set('hp_js', '1')->call('submitWithJs')->assertHasNoErrors();
+    $component->assertSet('hp_js', '')->assertDontSeeHtml('wire:key="' . $key . '"');
+    $component->assertSeeHtml('wire:key="hp-js-' . $component->id() . '-' . $component->hp_token . '"');
+
+    // PHP tests do not execute Alpine: each reset must require another client marker.
+    $component->call('submitWithJs')->assertHasErrors('hp_website');
 });
 
 // ---------------------------------------------------------------------------
@@ -199,7 +227,7 @@ class JsVerificationComponent extends Component
 
     public function render(): string
     {
-        return '<div>Test</div>';
+        return '<div><x-honeypot /></div>';
     }
 }
 
@@ -220,6 +248,14 @@ class JsVerificationOverrideComponent extends Component
 
     public function render(): string
     {
-        return '<div>Test</div>';
+        return '<div><x-honeypot /></div>';
+    }
+}
+
+class JsVerificationDisabledComponent extends JsVerificationOverrideComponent
+{
+    protected function honeypotConfig(): array
+    {
+        return ['require_js_verification' => false];
     }
 }

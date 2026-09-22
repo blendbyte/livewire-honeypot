@@ -55,6 +55,14 @@ trait HasHoneypot
         return $this->honeypotConfig()[$key] ?? HoneypotConfig::get($key, $default);
     }
 
+    /**
+     * Expose the effective setting to the Blade component without client state.
+     */
+    public function isHoneypotJsVerificationRequired(): bool
+    {
+        return (bool) $this->getHoneypotConfig('require_js_verification');
+    }
+
     public function mountHasHoneypot(): void
     {
         $fieldName = (string) $this->getHoneypotConfig('field_name');
@@ -79,6 +87,7 @@ trait HasHoneypot
 
         $this->hp_started_at = now()->getTimestamp();
         $this->hp_token = Str::random((int) $this->getHoneypotConfig('token_length'));
+        // The Blade input key follows hp_token so Alpine runs again after a reset.
         $this->hp_js = '';
 
         $this->hp_field_name = (bool) $this->getHoneypotConfig('randomize_field_name')
@@ -157,7 +166,7 @@ trait HasHoneypot
         }
 
         // JS verification: field must be populated by Alpine.js on page load
-        if ((bool) $this->getHoneypotConfig('require_js_verification') && trim($this->hp_js) === '') {
+        if ($this->isHoneypotJsVerificationRequired() && trim($this->hp_js) === '') {
             event(new HoneypotDetected(
                 fieldName: $fieldName,
                 reason: 'js_verification_failed',

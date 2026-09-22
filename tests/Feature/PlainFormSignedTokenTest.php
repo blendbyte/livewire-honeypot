@@ -1,7 +1,10 @@
 <?php
 
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
+use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
+use Blendbyte\LivewireHoneypot\Responders\AbortResponder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 
 beforeEach(function () {
@@ -49,3 +52,44 @@ test('plain forms still reject missing or filled bait with a valid token', funct
 
     $this->postJson('/signed-contact', $data)->assertUnprocessable()->assertJsonValidationErrors('hp_website');
 })->with([true, false]);
+
+test('plain forms reject malformed JS markers through the normal validation path', function (mixed $marker) {
+    config(['livewire-honeypot.require_js_verification' => true]);
+    Event::fake([HoneypotDetected::class]);
+    $data = app(HoneypotService::class)->generate();
+    $this->travel(5)->seconds();
+
+    $this->postJson('/signed-contact', [...$data, 'hp_js' => $marker])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('hp_website');
+
+    Event::assertDispatchedTimes(HoneypotDetected::class, 1);
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'js_verification_failed');
+})->with([
+    'empty array' => [[]],
+    'filled array' => [['1']],
+    'nested array' => [['marker' => ['1']]],
+    'integer' => [1],
+    'boolean' => [true],
+    'null' => [null],
+    'whitespace' => ['   '],
+]);
+
+test('plain forms accept a nonempty string JS marker', function () {
+    config(['livewire-honeypot.require_js_verification' => true]);
+    $data = app(HoneypotService::class)->generate();
+    $this->travel(5)->seconds();
+
+    $this->postJson('/signed-contact', [...$data, 'hp_js' => '1'])->assertOk();
+});
+
+test('malformed JS markers still use the configured spam responder', function () {
+    config([
+        'livewire-honeypot.require_js_verification' => true,
+        'livewire-honeypot.spam_responder' => AbortResponder::class,
+    ]);
+    $data = app(HoneypotService::class)->generate();
+    $this->travel(5)->seconds();
+
+    $this->postJson('/signed-contact', [...$data, 'hp_js' => ['1']])->assertForbidden();
+});

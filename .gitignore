@@ -4,3 +4,6 @@
 .phpunit.cache
 .phpunit.result.cache
 .pest
+/node_modules/
+/test-results/
+/playwright-report/
