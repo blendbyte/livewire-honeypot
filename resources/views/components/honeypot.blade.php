@@ -28,7 +28,11 @@
                    wire:model.lazy="{{ $staticFieldName }}"
                @endif
                tabindex="-1"
-               autocomplete="off" />
+               autocomplete="off"
+               data-1p-ignore="true"
+               data-lpignore="true"
+               data-bwignore="true"
+               data-form-type="other" />
     </label>
     @if(config('livewire-honeypot.require_js_verification', false))
     <input type="hidden"

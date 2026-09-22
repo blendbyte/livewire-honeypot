@@ -57,7 +57,7 @@ test('it registers the views namespace', function () {
 test('it registers the translations namespace', function () {
     expect(__('livewire-honeypot::validation.spam_detected'))->toBe('Spam detected.');
     expect(__('livewire-honeypot::validation.submitted_too_quickly'))->toBe('Form submitted too quickly.');
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Website (leave empty)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Leave this field empty');
 });
 
 // ---------------------------------------------------------------------------

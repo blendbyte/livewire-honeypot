@@ -19,7 +19,7 @@ test('en: submitted_too_quickly', function () {
 test('en: honeypot_label', function () {
     app()->setLocale('en');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Website (leave empty)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Leave this field empty');
 });
 
 // ---------------------------------------------------------------------------
@@ -41,7 +41,7 @@ test('nl: submitted_too_quickly', function () {
 test('nl: honeypot_label', function () {
     app()->setLocale('nl');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Website (laat leeg)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Laat dit veld leeg');
 });
 
 // ---------------------------------------------------------------------------
@@ -63,7 +63,7 @@ test('de: submitted_too_quickly', function () {
 test('de: honeypot_label', function () {
     app()->setLocale('de');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Website (frei lassen)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Dieses Feld leer lassen');
 });
 
 // ---------------------------------------------------------------------------
@@ -96,7 +96,7 @@ test('es: submitted_too_quickly', function () {
 test('es: honeypot_label', function () {
     app()->setLocale('es');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Sitio web (dejar vacío)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Deje este campo vacío');
 });
 
 // ---------------------------------------------------------------------------
@@ -118,7 +118,7 @@ test('fr: submitted_too_quickly', function () {
 test('fr: honeypot_label', function () {
     app()->setLocale('fr');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Site web (laisser vide)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Laissez ce champ vide');
 });
 
 // ---------------------------------------------------------------------------
@@ -140,7 +140,7 @@ test('pt: submitted_too_quickly', function () {
 test('pt: honeypot_label', function () {
     app()->setLocale('pt');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Website (deixar vazio)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Deixe este campo vazio');
 });
 
 // ---------------------------------------------------------------------------
@@ -162,7 +162,7 @@ test('it_locale: submitted_too_quickly', function () {
 test('it_locale: honeypot_label', function () {
     app()->setLocale('it');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Sito web (lasciare vuoto)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Lascia questo campo vuoto');
 });
 
 // ---------------------------------------------------------------------------
@@ -184,7 +184,7 @@ test('ru: submitted_too_quickly', function () {
 test('ru: honeypot_label', function () {
     app()->setLocale('ru');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Веб-сайт (оставьте пустым)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Оставьте это поле пустым');
 });
 
 // ---------------------------------------------------------------------------
@@ -206,7 +206,7 @@ test('pl: submitted_too_quickly', function () {
 test('pl: honeypot_label', function () {
     app()->setLocale('pl');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Strona internetowa (zostaw puste)');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('Pozostaw to pole puste');
 });
 
 // ---------------------------------------------------------------------------
@@ -228,7 +228,7 @@ test('ja: submitted_too_quickly', function () {
 test('ja: honeypot_label', function () {
     app()->setLocale('ja');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('ウェブサイト（空白のまま）');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('この欄は空欄のままにしてください');
 });
 
 // ---------------------------------------------------------------------------
@@ -250,7 +250,7 @@ test('zh: submitted_too_quickly', function () {
 test('zh: honeypot_label', function () {
     app()->setLocale('zh');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('网站（请留空）');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('请将此字段留空');
 });
 
 // ---------------------------------------------------------------------------
@@ -272,7 +272,7 @@ test('zh-TW: submitted_too_quickly', function () {
 test('zh-TW: honeypot_label', function () {
     app()->setLocale('zh-TW');
 
-    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('網站（請留空）');
+    expect(__('livewire-honeypot::validation.honeypot_label'))->toBe('請將此欄位留空');
 });
 
 // ---------------------------------------------------------------------------

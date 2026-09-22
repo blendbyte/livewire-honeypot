@@ -259,7 +259,9 @@ Then in your Blade template, use the values as hidden inputs:
 ```blade
 <form method="POST" action="/contact">
     @csrf
-    <input type="text"   name="hp_website"    value="{{ $hp['hp_website'] }}"    style="display:none" tabindex="-1" autocomplete="off">
+    <input type="text" name="hp_website" value="{{ $hp['hp_website'] }}"
+           style="display:none" tabindex="-1" autocomplete="off"
+           data-1p-ignore="true" data-lpignore="true" data-bwignore="true" data-form-type="other">
     <input type="hidden" name="hp_token"      value="{{ $hp['hp_token'] }}">
 
     {{-- your regular fields --}}
@@ -290,6 +292,8 @@ The `<x-honeypot />` component renders hidden fields and scoped CSS that moves t
 | `hp_js`        | Populated by Alpine.js on page load | Only when `require_js_verification = true`  |
 
 The bait fields use `aria-hidden="true"` and `tabindex="-1"` so they are hidden from screen readers and keyboard navigation. Validation messages appear outside the hidden wrapper in a `<p class="hp-error" role="alert">` element and inherit your application's text styling. You can style `.hp-error` in your own stylesheet.
+
+The bait input uses a neutral label, `autocomplete="off"`, and ignore hints for 1Password, LastPass, Bitwarden, and Dashlane to reduce accidental autofill. These hints are best effort; behavior depends on the browser and password manager. If you published the view or translations, update your copies to include the new input attributes and neutral `honeypot_label` text.
 
 The message uses the custom `wire:model` path when provided, or the configured `field_name` otherwise. A randomized HTML `field-name` does not change the error key. Timestamp and token validation errors are also displayed when there is no error on the bait field. Only the first relevant message is shown, and it disappears when validation succeeds.
 
@@ -503,7 +507,7 @@ php artisan vendor:publish --tag=livewire-honeypot-translations
 |--------------------------|-------------------------------|------------------------------------------|
 | `spam_detected`          | `Spam detected.`             | Shown when the bait field is filled      |
 | `submitted_too_quickly`  | `Form submitted too quickly.` | Shown when the time-trap triggers        |
-| `honeypot_label`         | `Website (leave empty)`      | Accessible label on the hidden field     |
+| `honeypot_label`         | `Leave this field empty`      | Accessible label on the hidden field     |
 | `invalid_form_data`      | `Invalid form data.`         | Shown when `hp_started_at` is out of range |
 | `js_verification_failed` | `JavaScript verification failed.` | Shown when `hp_js` is empty         |
 

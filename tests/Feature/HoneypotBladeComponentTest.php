@@ -57,7 +57,7 @@ test('it injects offscreen CSS styles', function () {
 test('it renders the honeypot_label translation in the label span', function () {
     $html = Blade::render('<x-honeypot />');
 
-    expect($html)->toContain('Website (leave empty)');
+    expect($html)->toContain('Leave this field empty');
 });
 
 test('it sets autocomplete off on the text input', function () {
