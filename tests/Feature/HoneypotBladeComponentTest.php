@@ -17,34 +17,22 @@ test('it renders the hp_website text input', function () {
         ->toContain('type="text"');
 });
 
-test('it renders the hp_started_at hidden input', function () {
+test('it does not render a start time input', function () {
     $html = Blade::render('<x-honeypot />');
 
-    expect($html)->toContain('name="hp_started_at"');
+    expect($html)->not->toContain('name="hp_started_at"');
 });
 
-test('it renders the hp_token hidden input', function () {
+test('it does not render a token input', function () {
     $html = Blade::render('<x-honeypot />');
 
-    expect($html)->toContain('name="hp_token"');
+    expect($html)->not->toContain('name="hp_token"');
 });
 
 test('it binds hp_website with wire:model.lazy by default', function () {
     $html = Blade::render('<x-honeypot />');
 
     expect($html)->toContain('wire:model.lazy=hp_website');
-});
-
-test('it binds hp_started_at with wire:model by default', function () {
-    $html = Blade::render('<x-honeypot />');
-
-    expect($html)->toContain('wire:model=hp_started_at');
-});
-
-test('it binds hp_token with wire:model by default', function () {
-    $html = Blade::render('<x-honeypot />');
-
-    expect($html)->toContain('wire:model=hp_token');
 });
 
 test('it sets tabindex -1 on the text input', function () {

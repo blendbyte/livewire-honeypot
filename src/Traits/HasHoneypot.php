@@ -7,6 +7,7 @@ use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Livewire\Attributes\Locked;
 
 /**
  * @phpstan-require-extends \Livewire\Component
@@ -15,8 +16,13 @@ trait HasHoneypot
 {
     public string $hp_website = '';
     public string $hp_field_name = '';
+
+    #[Locked]
     public int $hp_started_at = 0;
+
+    #[Locked]
     public string $hp_token = '';
+
     public string $hp_js = '';
 
     /**

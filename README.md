@@ -97,8 +97,8 @@ That's it — bots get blocked, real users never notice.
 
 ## How It Works
 
-1. On page load, the trait/service generates a Unix timestamp (`hp_started_at`) and a cryptographically random token (`hp_token`). These are stored as hidden Livewire properties or passed to the view.
-2. The Blade component renders these values as hidden inputs alongside the bait field, which is visually positioned offscreen via CSS. If `randomize_field_name` is enabled, the bait field's HTML `name` is randomised each page load.
+1. On page load, the trait/service generates a Unix timestamp (`hp_started_at`) and a cryptographically random token (`hp_token`). In Livewire, both are `#[Locked]` properties: Livewire carries them in its signed snapshot and rejects client updates. Plain controller forms pass them to the view as hidden inputs.
+2. The Blade component renders the bait field, which is visually positioned offscreen via CSS. Livewire needs no timestamp or token inputs. If `randomize_field_name` is enabled, the bait field's HTML `name` is randomised each page load.
 3. On submission, `validateHoneypot()` / `HoneypotService::validate()` checks:
    - The bait field is **empty** (bots usually fill every visible and hidden input).
    - `hp_started_at` falls within the last hour (guards against replayed or stale forms).
@@ -252,11 +252,13 @@ The `<x-honeypot />` component renders hidden fields and scoped CSS that moves t
 | Field          | Purpose                             | Always rendered                            |
 |----------------|-------------------------------------|--------------------------------------------|
 | `hp_website` (configurable)  | Bait field — must remain empty      | Yes                                        |
-| `hp_started_at`| Unix timestamp of page load         | Yes                                        |
-| `hp_token`     | Random token to verify form origin  | Yes                                        |
 | `hp_js`        | Populated by Alpine.js on page load | Only when `require_js_verification = true`  |
 
 The component uses `aria-hidden="true"` and `tabindex="-1"` so it is invisible to screen readers and keyboard navigation.
+
+The timestamp (`hp_started_at`) and token (`hp_token`) are locked Livewire properties and are not rendered as inputs. Server-side calls to `resetHoneypot()` can still refresh both values.
+
+If you previously published or copied the Blade view, remove the `hp_started_at` and `hp_token` inputs from your Livewire form. Their old `wire:model` bindings target properties that now reject client updates. Keep the hidden inputs in plain controller forms as shown above.
 
 ## Configuration
 
@@ -427,6 +429,16 @@ it('submits the contact form', function () {
 ```
 
 When fake mode is active, `validateHoneypot()` (trait) and `HoneypotService::validate()` (service) both return immediately without checking any fields.
+
+To test the time-trap itself, advance time after mounting the component:
+
+```php
+$component = Livewire::test(ContactForm::class);
+$this->travel(5)->seconds();
+$component->call('submit');
+```
+
+Replace any test calls to `->set('hp_started_at', ...)` with time travel. Client updates to `hp_started_at` and `hp_token` throw `CannotUpdateLockedPropertyException`, including while fake mode is active.
 
 ## Translations
 

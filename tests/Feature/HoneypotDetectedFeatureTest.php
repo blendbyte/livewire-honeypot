@@ -16,7 +16,7 @@ test('HasHoneypot dispatches HoneypotDetected when honeypot field is filled', fu
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(EventTestComponent::class);
     $component->set($fieldName, 'spam');
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submit');
 
     Event::assertDispatched(HoneypotDetected::class, function (HoneypotDetected $event) {
@@ -43,7 +43,7 @@ test('HasHoneypot event includes component class name', function () {
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(EventTestComponent::class);
     $component->set($fieldName, 'bot');
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submit');
 
     Event::assertDispatched(HoneypotDetected::class, function (HoneypotDetected $event) {

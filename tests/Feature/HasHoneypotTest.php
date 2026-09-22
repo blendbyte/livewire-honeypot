@@ -2,6 +2,7 @@
 
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 use Livewire\Component;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 
 // ---------------------------------------------------------------------------
@@ -64,7 +65,7 @@ test('it fails when honeypot field is filled', function () {
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
     $component->set($fieldName, 'https://spam.com');
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submit');
 
     $component->assertHasErrors([$fieldName => 'size']);
@@ -74,7 +75,7 @@ test('spam detection error message is correct', function () {
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(TestComponent::class);
     $component->set($fieldName, 'spam');
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submit');
 
     $component->assertHasErrors($fieldName);
@@ -86,7 +87,7 @@ test('it uses configured field_name for validation', function () {
 
     $component = Livewire::test(CustomFieldComponent::class);
     $component->set('my_trap', 'https://spam.com');
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submit');
 
     $component->assertHasErrors('my_trap');
@@ -124,8 +125,8 @@ test('it uses configured field_name for time-trap error', function () {
 test('it respects a custom minimum seconds parameter', function () {
     $component = Livewire::test(TestComponent::class);
 
-    // Set hp_started_at to 2 seconds ago — would fail the default 5s check
-    $component->set('hp_started_at', now()->subSeconds(2)->getTimestamp());
+    // Two seconds have elapsed, which would fail the default 5s check
+    $this->travel(2)->seconds();
 
     // But passes when we override minimum to 1 second
     config(['livewire-honeypot.minimum_fill_seconds' => 99]); // ensure config is NOT used
@@ -137,7 +138,7 @@ test('it respects a custom minimum seconds parameter', function () {
 test('it still fails when custom minimum seconds is not met', function () {
     $component = Livewire::test(TestComponent::class);
 
-    $component->set('hp_started_at', now()->subSeconds(2)->getTimestamp());
+    $this->travel(2)->seconds();
 
     $component->call('submitWithMinimum', 10); // require 10s but only 2s elapsed
 
@@ -148,27 +149,35 @@ test('it still fails when custom minimum seconds is not met', function () {
 // validateHoneypot() — token
 // ---------------------------------------------------------------------------
 
-test('it fails when hp_token is empty', function () {
-    config(['livewire-honeypot.minimum_fill_seconds' => 0]);
+test('it rejects client changes to the form token', function (string $token) {
+    Livewire::test(TestComponent::class)->set('hp_token', $token);
+})->with(['', 'short', str_repeat('x', 24)])
+    ->throws(CannotUpdateLockedPropertyException::class, 'hp_token');
 
+test('it rejects a client backdating the start time to bypass the time trap', function () {
+    $this->freezeTime();
+
+    Livewire::test(TestComponent::class)
+        ->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+})->throws(CannotUpdateLockedPropertyException::class, 'hp_started_at');
+
+test('it enforces the time trap across submissions and server-side resets', function () {
+    $this->freezeTime();
     $component = Livewire::test(TestComponent::class);
-    $component->set('hp_token', '');
-    $component->call('submit');
+    $originalToken = $component->hp_token;
 
-    $component->assertHasErrors('hp_token');
-});
+    $this->travel(4)->seconds();
+    $component->call('submit')->assertHasErrors('hp_website');
+    expect($component->hp_token)->toBe($originalToken);
 
-test('it fails when hp_token is shorter than token_min_length', function () {
-    config([
-        'livewire-honeypot.minimum_fill_seconds' => 0,
-        'livewire-honeypot.token_min_length'      => 15,
-    ]);
+    $this->travel(1)->seconds();
+    $component->call('submit')->assertHasNoErrors();
+    expect($component->hp_started_at)->toBe(now()->getTimestamp());
+    expect($component->hp_token)->not->toBe($originalToken);
 
-    $component = Livewire::test(TestComponent::class);
-    $component->set('hp_token', str_repeat('x', 10));
-    $component->call('submit');
-
-    $component->assertHasErrors('hp_token');
+    $component->call('submit')->assertHasErrors('hp_website');
+    $this->travel(5)->seconds();
+    $component->call('submit')->assertHasNoErrors();
 });
 
 // ---------------------------------------------------------------------------
@@ -299,7 +308,7 @@ class TestComponent extends Component
 
     public function render(): string
     {
-        return '<div>Test</div>';
+        return '<div><x-honeypot /></div>';
     }
 }
 
@@ -318,6 +327,6 @@ class CustomFieldComponent extends Component
 
     public function render(): string
     {
-        return '<div>Test</div>';
+        return '<div><x-honeypot /></div>';
     }
 }

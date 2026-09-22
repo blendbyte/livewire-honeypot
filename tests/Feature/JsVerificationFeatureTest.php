@@ -19,7 +19,7 @@ test('hp_js is reset to empty string after resetHoneypot', function () {
 
     $component = Livewire::test(JsVerificationComponent::class);
     $component->set('hp_js', 'MTY5MDAwMDAwMA==');
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
 
     // Simulate a successful submit that calls resetHoneypot
     config(['livewire-honeypot.require_js_verification' => true]);
@@ -39,7 +39,7 @@ test('validation passes with empty hp_js when js verification is disabled', func
     ]);
 
     $component = Livewire::test(JsVerificationComponent::class);
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submitWithJs');
 
     $component->assertHasNoErrors();
@@ -56,7 +56,7 @@ test('validation fails when js verification is enabled and hp_js is empty', func
     ]);
 
     $component = Livewire::test(JsVerificationComponent::class);
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     // hp_js is default '' — JS did not run
     $component->call('submitWithJs');
 
@@ -70,7 +70,7 @@ test('validation passes when js verification is enabled and hp_js is populated',
     ]);
 
     $component = Livewire::test(JsVerificationComponent::class);
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->set('hp_js', base64_encode((string) time()));
     $component->call('submitWithJs');
 
@@ -86,7 +86,7 @@ test('js verification error uses the configured field_name', function () {
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
 
     $component = Livewire::test(JsVerificationComponent::class);
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submitWithJs');
 
     $component->assertHasErrors($fieldName);
@@ -101,7 +101,7 @@ test('js verification error message is correct', function () {
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
 
     $component = Livewire::test(JsVerificationComponent::class);
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submitWithJs');
 
     expect($component->errors()->first($fieldName))->toBe('JavaScript verification failed.');
@@ -118,7 +118,7 @@ test('per-component config can enable js verification', function () {
     ]);
 
     $component = Livewire::test(JsVerificationOverrideComponent::class);
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     // hp_js empty — but component-level config enables it
     $component->call('submitWithJs');
 

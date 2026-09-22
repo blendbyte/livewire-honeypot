@@ -14,10 +14,9 @@ test('validateHoneypot() is bypassed when fake mode is active', function () {
 
     $component = Livewire::test(FakeTestComponent::class);
 
-    // Tamper with every honeypot field so it would normally fail
+    // A filled bait and expired start time would normally fail validation
     $component->set('hp_website', 'bot was here');
-    $component->set('hp_started_at', 0);
-    $component->set('hp_token', '');
+    $this->travel(2)->hours();
 
     $component->call('submit');
 
@@ -29,7 +28,7 @@ test('validateHoneypot() fires normally when fake mode is not active', function 
 
     $component = Livewire::test(FakeTestComponent::class);
     $component->set($fieldName, 'bot was here');
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submit');
 
     $component->assertHasErrors($fieldName);
@@ -42,7 +41,7 @@ test('validateHoneypot() resumes normal behaviour after resetFake()', function (
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
     $component = Livewire::test(FakeTestComponent::class);
     $component->set($fieldName, 'bot was here');
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submit');
 
     $component->assertHasErrors($fieldName);

@@ -14,8 +14,6 @@
                tabindex="-1"
                autocomplete="off" />
     </label>
-    <input type="hidden" name="hp_started_at" {!! $attributes->whereStartsWith('wire:model')->first() ? '' : 'wire:model=hp_started_at' !!}>
-    <input type="hidden" name="hp_token" {!! $attributes->whereStartsWith('wire:model')->first() ? '' : 'wire:model=hp_token' !!}>
     @if(config('livewire-honeypot.require_js_verification', false))
     <input type="hidden"
            name="hp_js"

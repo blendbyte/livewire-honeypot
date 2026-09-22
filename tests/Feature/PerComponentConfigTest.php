@@ -12,7 +12,7 @@ use Livewire\Livewire;
 test('component-level minimum_fill_seconds overrides global config', function () {
     // Global config is 5s; component sets 1s — a 2s-old timestamp should pass
     $component = Livewire::test(FastFormComponent::class);
-    $component->set('hp_started_at', now()->subSeconds(2)->getTimestamp());
+    $this->travel(2)->seconds();
     $component->call('submit');
 
     $component->assertHasNoErrors();
@@ -21,7 +21,7 @@ test('component-level minimum_fill_seconds overrides global config', function ()
 test('component-level minimum_fill_seconds is enforced over global config', function () {
     // Global config is 5s; component sets 15s — a 10s-old timestamp should fail
     $component = Livewire::test(SlowFormComponent::class);
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submit');
 
     $component->assertHasErrors();
@@ -58,7 +58,7 @@ test('component-level token_min_length accepts shorter token', function () {
 
     // Component overrides token_min_length to 5, so a 6-char token passes
     $component = Livewire::test(ShortTokenMinComponent::class);
-    $component->set('hp_token', 'abcdef');
+    expect($component->hp_token)->toHaveLength(6);
     $component->call('submit');
 
     $component->assertHasNoErrors();
@@ -170,7 +170,7 @@ class ShortTokenMinComponent extends Component
 
     protected function honeypotConfig(): array
     {
-        return ['token_min_length' => 5];
+        return ['token_min_length' => 5, 'token_length' => 6];
     }
 
     public function submit(): void

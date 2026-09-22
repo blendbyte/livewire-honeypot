@@ -16,7 +16,7 @@ test('default responder shows validation error on honeypot fill', function () {
 
     $component = Livewire::test(ResponderTestComponent::class);
     $component->set($fieldName, 'spam');
-    $component->set('hp_started_at', now()->subSeconds(10)->getTimestamp());
+    $this->travel(10)->seconds();
     $component->call('submit');
 
     $component->assertHasErrors($fieldName);
