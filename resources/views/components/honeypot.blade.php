@@ -1,10 +1,21 @@
 {{-- Anonymous honeypot component. Usage: <x-honeypot /> --}}
 {{-- With randomized field name: <x-honeypot :field-name="$hp_field_name" /> --}}
-@props(['fieldName' => null])
+@props(['fieldName' => null, 'errorKey' => null])
 @php
     $staticFieldName = config('livewire-honeypot.field_name', 'hp_website');
     $displayName = $fieldName ?? $staticFieldName;
     $modelAttributes = $attributes->whereStartsWith('wire:model');
+    $errorKeys = [$errorKey ?? $modelAttributes->first() ?? $staticFieldName, 'hp_started_at', 'hp_token'];
+    $errorMessage = null;
+
+    if (isset($errors)) {
+        foreach ($errorKeys as $key) {
+            if ($errors->has($key)) {
+                $errorMessage = $errors->first($key);
+                break;
+            }
+        }
+    }
 @endphp
 <div class="hp-field" aria-hidden="true">
     <label>
@@ -38,3 +49,6 @@
         }
     </style>
 </div>
+@if($errorMessage !== null)
+    <p class="hp-error" role="alert">{{ $errorMessage }}</p>
+@endif

@@ -282,18 +282,30 @@ Signing requires `APP_KEY`; generation and verification throw `Illuminate\Encryp
 
 ## Blade Component
 
-The `<x-honeypot />` component renders hidden fields and scoped CSS that moves them offscreen:
+The `<x-honeypot />` component renders hidden fields and scoped CSS that moves them offscreen, plus a visible message when honeypot validation fails:
 
 | Field          | Purpose                             | Always rendered                            |
 |----------------|-------------------------------------|--------------------------------------------|
 | `hp_website` (configurable)  | Bait field — must remain empty      | Yes                                        |
 | `hp_js`        | Populated by Alpine.js on page load | Only when `require_js_verification = true`  |
 
-The component uses `aria-hidden="true"` and `tabindex="-1"` so it is invisible to screen readers and keyboard navigation.
+The bait fields use `aria-hidden="true"` and `tabindex="-1"` so they are hidden from screen readers and keyboard navigation. Validation messages appear outside the hidden wrapper in a `<p class="hp-error" role="alert">` element and inherit your application's text styling. You can style `.hp-error` in your own stylesheet.
+
+The message uses the custom `wire:model` path when provided, or the configured `field_name` otherwise. A randomized HTML `field-name` does not change the error key. Timestamp and token validation errors are also displayed when there is no error on the bait field. Only the first relevant message is shown, and it disappears when validation succeeds.
+
+If your own responder reports an error under another key, select it with `error-key`:
+
+```blade
+<x-honeypot wire:model="contact.trap" error-key="form_spam" />
+```
+
+This prop selects the displayed error; the bait binding and validation target remain `contact.trap`.
 
 The timestamp (`hp_started_at`) and token (`hp_token`) are locked Livewire properties and are not rendered as inputs. Server-side calls to `resetHoneypot()` can still refresh both values.
 
 If you previously published or copied the Blade view, remove the `hp_started_at` and `hp_token` inputs from your Livewire form. Their old `wire:model` bindings target properties that now reject client updates. Plain controller forms still need the signed `hp_token` input shown above.
+
+To show errors in a previously published view, also copy the updated error lookup and message block from the package view, keeping the message outside the `.hp-field` wrapper.
 
 ## Configuration
 
