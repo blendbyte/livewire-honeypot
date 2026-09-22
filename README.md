@@ -126,6 +126,35 @@ class ContactForm extends Component
 
 The trait's `mount` method will throw a `LogicException` with a clear message if the property is missing.
 
+### Custom Livewire bindings
+
+To bind the bait input to another property, pass `wire:model` to the Blade component and pass the same path to `validateHoneypotForModel()` and `resetHoneypotForModel()`:
+
+```blade
+<x-honeypot wire:model="contact.trap" />
+```
+
+```php
+public array $contact = ['trap' => '', 'email' => ''];
+
+public function submit(): void
+{
+    $this->validateHoneypotForModel('contact.trap');
+
+    // Validate and process the rest of the form ...
+
+    $this->resetHoneypotForModel('contact.trap');
+}
+```
+
+Top-level properties, nested arrays, and properties on a Livewire form object are supported. Initialize the bait property to an empty string and keep the `HasHoneypot` trait on the Livewire component. Validation errors and detection events use the chosen property path, such as `contact.trap`.
+
+Binding modifiers such as `wire:model.blur` are preserved. The optional JS verification field remains bound to `hp_js` independently. The `field-name` prop changes only the HTML input name, so it can still be used for randomization alongside a custom binding.
+
+`validateHoneypotForModel('contact.trap', minimumSeconds: 2)` also overrides the minimum fill time. The existing `validateHoneypot(?int $minimumSeconds = null)` and `resetHoneypot()` signatures are unchanged, so subclass overrides remain compatible. Those methods continue to use the configured `field_name`. If you override `field_name` per component, set the Blade component's `wire:model` to that property too.
+
+**Upgrading custom bindings:** existing `<x-honeypot wire:model="..." />` usages must pass the same path to `validateHoneypotForModel(...)`. Otherwise validation still checks the configured default property. If you published the Blade view, update its bait input to forward the supplied `wire:model` attributes and keep `wire:model="hp_js"` on the JS verification input.
+
 ### Per-component configuration
 
 Override `honeypotConfig()` to customise any honeypot setting for a specific component without touching the global config:

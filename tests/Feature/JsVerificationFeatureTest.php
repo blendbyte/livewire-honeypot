@@ -175,7 +175,7 @@ test('blade component hp_js field has wire:model binding', function () {
 
     $html = Blade::render('<x-honeypot />');
 
-    expect($html)->toContain('wire:model=hp_js');
+    expect($html)->toContain('wire:model="hp_js"');
 });
 
 // ---------------------------------------------------------------------------

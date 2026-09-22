@@ -32,7 +32,7 @@ test('it does not render a token input', function () {
 test('it binds hp_website with wire:model.lazy by default', function () {
     $html = Blade::render('<x-honeypot />');
 
-    expect($html)->toContain('wire:model.lazy=hp_website');
+    expect($html)->toContain('wire:model.lazy="hp_website"');
 });
 
 test('it sets tabindex -1 on the text input', function () {
@@ -75,7 +75,7 @@ test('it accepts a custom field-name prop for the name attribute', function () {
 test('wire:model.lazy still targets the static field_name when a custom field-name prop is passed', function () {
     $html = Blade::render('<x-honeypot :field-name="$name" />', ['name' => 'hp_random99']);
 
-    expect($html)->toContain('wire:model.lazy=hp_website');
+    expect($html)->toContain('wire:model.lazy="hp_website"');
 });
 
 test('name attribute falls back to config field_name when no prop is passed', function () {

@@ -4,20 +4,25 @@
 @php
     $staticFieldName = config('livewire-honeypot.field_name', 'hp_website');
     $displayName = $fieldName ?? $staticFieldName;
+    $modelAttributes = $attributes->whereStartsWith('wire:model');
 @endphp
 <div class="hp-field" aria-hidden="true">
     <label>
         <span>{{ __('livewire-honeypot::validation.honeypot_label') }}</span>
         <input type="text"
                name="{{ $displayName }}"
-               {!! $attributes->whereStartsWith('wire:model')->first() ? '' : "wire:model.lazy={$staticFieldName}" !!}
+               @if($modelAttributes->isNotEmpty())
+                   {{ $modelAttributes }}
+               @else
+                   wire:model.lazy="{{ $staticFieldName }}"
+               @endif
                tabindex="-1"
                autocomplete="off" />
     </label>
     @if(config('livewire-honeypot.require_js_verification', false))
     <input type="hidden"
            name="hp_js"
-           {!! $attributes->whereStartsWith('wire:model')->first() ? '' : 'wire:model=hp_js' !!}
+           wire:model="hp_js"
            x-data
            x-init="$el.value = btoa(String(Date.now())); $el.dispatchEvent(new Event('input', {bubbles: true}))" />
     @endif

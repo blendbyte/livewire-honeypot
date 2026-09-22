@@ -67,10 +67,14 @@ trait HasHoneypot
         $this->resetHoneypot();
     }
 
+    /**
+     * Refresh the form metadata and clear the configured bait field.
+     */
     protected function resetHoneypot(): void
     {
         $fieldName = (string) $this->getHoneypotConfig('field_name', 'hp_website');
         $this->$fieldName = '';
+
         $this->hp_started_at = now()->getTimestamp();
         $this->hp_token = Str::random((int) $this->getHoneypotConfig('token_length', 24));
         $this->hp_js = '';
@@ -80,13 +84,37 @@ trait HasHoneypot
             : $fieldName;
     }
 
+    /**
+     * Clear a custom bait field and run the normal honeypot reset.
+     */
+    protected function resetHoneypotForModel(string $model): void
+    {
+        data_set($this, $model, '');
+        $this->resetHoneypot();
+    }
+
     protected function validateHoneypot(?int $minimumSeconds = null): void
     {
         if (HoneypotService::isFake()) {
             return;
         }
 
-        $fieldName = (string) $this->getHoneypotConfig('field_name', 'hp_website');
+        $this->validateHoneypotForModel(
+            (string) $this->getHoneypotConfig('field_name', 'hp_website'),
+            $minimumSeconds,
+        );
+    }
+
+    /**
+     * Validate the property path used by the Blade component's wire:model binding.
+     */
+    protected function validateHoneypotForModel(string $model, ?int $minimumSeconds = null): void
+    {
+        if (HoneypotService::isFake()) {
+            return;
+        }
+
+        $fieldName = $model;
         $tokenMinLength = (int) $this->getHoneypotConfig('token_min_length', 10);
         $minimumFillSeconds = $minimumSeconds ?? (int) $this->getHoneypotConfig('minimum_fill_seconds', 5);
         $now = now()->getTimestamp();
