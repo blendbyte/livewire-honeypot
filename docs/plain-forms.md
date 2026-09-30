@@ -51,6 +51,14 @@ public function store(Request $request, HoneypotService $honeypot)
 }
 ```
 
+To answer bots with a fake success instead of an error, use `isCaught()` with the same data. It never calls the configured responder, and it remembers caught tokens for an hour so a retry with the same token is caught too. An expired form still throws the normal validation error, so the visitor sees it and can reload. See [silent rejection](advanced.md#silent-rejection).
+
+```php
+if ($honeypot->isCaught($request->only(config('livewire-honeypot.field_name', 'hp_website'), 'hp_token', 'hp_js'))) {
+    return redirect()->back()->with('success', 'Sent!');
+}
+```
+
 `validate($data, minimumSeconds: 2)` overrides the minimum waiting time. Empty bait values converted to `null` by Laravel's middleware are accepted; a missing bait field is rejected.
 
 Tokens require `APP_KEY`, expire after one hour, and can be reused within that period. Keep CSRF protection and rate limiting. When rotating application keys, retain previous keys in `APP_PREVIOUS_KEYS` if open forms should continue working.

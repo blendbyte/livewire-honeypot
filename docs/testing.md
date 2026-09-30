@@ -1,5 +1,27 @@
 # Running the test suites
 
+## Testing silent rejection in your app
+
+Submissions caught by `isHoneypotCaught()` have no errors, so assert on your fake-success state and on the work that should not run. Submitting immediately after mounting triggers the waiting-time check. Use `travel()` to cover a retry:
+
+```php
+Event::fake([HoneypotDetected::class]);
+
+$component = Livewire::test(ContactForm::class);
+$component->call('submit')->assertHasNoErrors()->assertSet('success', true);
+
+// Waiting and resubmitting the same form is still caught.
+$this->travel(5)->seconds();
+$component->call('submit')->assertSet('success', true);
+
+Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'previously_detected');
+Mail::assertNothingSent();
+```
+
+Caught tokens are stored in the cache, so use the `array` store in tests. `HoneypotService::fake()` makes `isHoneypotCaught()` return `false`.
+
+## Package checks
+
 Install PHP dependencies and run the backend checks:
 
 ```bash

@@ -2,9 +2,11 @@
 
 namespace Blendbyte\LivewireHoneypot\Traits;
 
+use Blendbyte\LivewireHoneypot\CaughtTokens;
 use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\HoneypotConfig;
+use Blendbyte\LivewireHoneypot\HoneypotViolation;
 use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Support\Arr;
@@ -135,15 +137,86 @@ trait HasHoneypot
             return;
         }
 
-        // Form objects do not run the component's mount hook.
-        // Components with missing metadata still follow the normal rejection path.
+        $this->ensureHoneypotIsOnComponent();
+        $violation = $this->detectHoneypotViolation($model, $minimumSeconds);
+
+        if ($violation !== null) {
+            /** @var SpamResponder $responder */
+            $responder = app(SpamResponder::class);
+
+            // Keep the original error keys and failed rules for the built-in default.
+            // An exact class check ensures subclass overrides are still invoked.
+            if ($violation->exception !== null && $responder::class === ValidationExceptionResponder::class) {
+                throw $violation->exception;
+            }
+
+            $responder->respond($model, $violation->message);
+        }
+
+        $this->resetValidation([$model, 'hp_started_at', 'hp_token']);
+    }
+
+    /**
+     * Silently check the configured bait field. See isHoneypotCaughtForModel().
+     */
+    protected function isHoneypotCaught(?int $minimumSeconds = null): bool
+    {
+        return $this->isHoneypotCaughtForModel($this->getHoneypotFieldName(), $minimumSeconds);
+    }
+
+    /**
+     * Return true when the submission is spam, without calling the responder or adding errors.
+     * Once a form token is caught, every later submission with it is caught too.
+     * A form older than one hour still throws the normal validation error, so a visitor can reload.
+     *
+     * Answer a caught submission yourself, typically with a fake success. Do not call
+     * resetHoneypot() in that case: a fresh token would let the bot start over.
+     */
+    protected function isHoneypotCaughtForModel(string $model, ?int $minimumSeconds = null): bool
+    {
+        if (HoneypotService::isFake()) {
+            return false;
+        }
+
+        $this->ensureHoneypotIsOnComponent();
+
+        // Missing or short tokens are always rejected by detection, and must not share a cache key.
+        $minimumLength = max(CaughtTokens::MIN_REMEMBERED_LENGTH, (int) $this->getHoneypotConfig('token_min_length'));
+        $token = strlen($this->hp_token) >= $minimumLength ? $this->hp_token : null;
+
+        $caught = CaughtTokens::check(
+            $token,
+            fn (): ?HoneypotViolation => $this->detectHoneypotViolation($model, $minimumSeconds),
+            fn () => event(HoneypotDetected::fromRequest($model, 'previously_detected', static::class)),
+        );
+
+        if (! $caught) {
+            $this->resetValidation([$model, 'hp_started_at', 'hp_token']);
+        }
+
+        return $caught;
+    }
+
+    /**
+     * Form objects do not run the component's mount hook.
+     * Components with missing metadata still follow the normal rejection path.
+     */
+    private function ensureHoneypotIsOnComponent(): void
+    {
         if ($this->hp_started_at === 0 && ! ($this instanceof Component)) {
             throw new \LogicException(
                 'LivewireHoneypot: Use the HasHoneypot trait on the Livewire component, not on a form object. ' .
                 'For a bait field on a form object, call validateHoneypotForModel(\'form.trap\') on the component.'
             );
         }
+    }
 
+    /**
+     * Return the first violation, or null for a clean submission.
+     * Dispatches HoneypotDetected but never responds.
+     */
+    private function detectHoneypotViolation(string $model, ?int $minimumSeconds): ?HoneypotViolation
+    {
         $fieldName = $model;
         $tokenMinLength = (int) $this->getHoneypotConfig('token_min_length');
         $minimumFillSeconds = $minimumSeconds ?? (int) $this->getHoneypotConfig('minimum_fill_seconds');
@@ -154,6 +227,8 @@ trait HasHoneypot
         $data = $this->unwrapDataForValidation(
             Arr::only($this->all(), [$rootField, 'hp_started_at', 'hp_token', 'hp_js']),
         );
+
+        $violation = null;
 
         try {
             // Require presence & emptiness of the bait field, plus meta fields
@@ -167,64 +242,30 @@ trait HasHoneypot
                 'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
             ])->validate();
         } catch (ValidationException $e) {
-            $errors = $e->errors();
-            $reason = isset($errors[$fieldName]) ? 'honeypot_filled' : 'invalid_form_data';
-
-            event(new HoneypotDetected(
-                fieldName: $fieldName,
-                reason: $reason,
-                ipAddress: request()->ip(),
-                userAgent: request()->userAgent(),
-                component: static::class,
-            ));
-
-            /** @var SpamResponder $responder */
-            $responder = app(SpamResponder::class);
-
-            // Keep the original error keys and failed rules for the built-in default.
-            // An exact class check ensures subclass overrides are still invoked.
-            if ($responder::class === ValidationExceptionResponder::class) {
-                throw $e;
-            }
-
-            $responder->respond(
-                $fieldName,
-                $errors[$fieldName][0] ?? __('livewire-honeypot::validation.invalid_form_data'),
-            );
+            $violation = HoneypotViolation::fromValidationException($e, $fieldName);
         }
 
         // JS verification: field must be populated by Alpine.js on page load
         // Livewire exposes unset typed properties as null in all().
-        if ($this->isHoneypotJsVerificationRequired() && trim($data['hp_js'] ?? '') === '') {
-            event(new HoneypotDetected(
-                fieldName: $fieldName,
-                reason: 'js_verification_failed',
-                ipAddress: request()->ip(),
-                userAgent: request()->userAgent(),
-                component: static::class,
-            ));
-
-            /** @var SpamResponder $responder */
-            $responder = app(SpamResponder::class);
-            $responder->respond($fieldName, __('livewire-honeypot::validation.js_verification_failed'));
+        if ($violation === null && $this->isHoneypotJsVerificationRequired() && trim($data['hp_js'] ?? '') === '') {
+            $violation = new HoneypotViolation(
+                'js_verification_failed',
+                __('livewire-honeypot::validation.js_verification_failed'),
+            );
         }
 
         // Time-trap: minimum time spent before submit
-        $elapsed = $now - (int) $this->hp_started_at;
-        if ($elapsed < $minimumFillSeconds) {
-            event(new HoneypotDetected(
-                fieldName: $fieldName,
-                reason: 'submitted_too_quickly',
-                ipAddress: request()->ip(),
-                userAgent: request()->userAgent(),
-                component: static::class,
-            ));
-
-            /** @var SpamResponder $responder */
-            $responder = app(SpamResponder::class);
-            $responder->respond($fieldName, __('livewire-honeypot::validation.submitted_too_quickly'));
+        if ($violation === null && $now - (int) $this->hp_started_at < $minimumFillSeconds) {
+            $violation = new HoneypotViolation(
+                'submitted_too_quickly',
+                __('livewire-honeypot::validation.submitted_too_quickly'),
+            );
         }
 
-        $this->resetValidation([$fieldName, 'hp_started_at', 'hp_token']);
+        if ($violation !== null) {
+            event(HoneypotDetected::fromRequest($fieldName, $violation->reason, static::class));
+        }
+
+        return $violation;
     }
 }

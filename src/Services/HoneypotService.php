@@ -2,8 +2,11 @@
 
 namespace Blendbyte\LivewireHoneypot\Services;
 
+use Blendbyte\LivewireHoneypot\CaughtTokens;
+use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\HoneypotConfig;
+use Blendbyte\LivewireHoneypot\HoneypotViolation;
 use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Validation\ValidationException;
@@ -130,13 +133,68 @@ class HoneypotService
             return;
         }
 
+        $violation = $this->detectViolation($data, $minimumSeconds, $this->startedAtFromToken($data['hp_token'] ?? null));
+
+        if ($violation === null) {
+            return;
+        }
+
+        /** @var SpamResponder $responder */
+        $responder = app(SpamResponder::class);
+
+        // Preserve the default metadata error bag without bypassing subclass overrides.
+        if ($violation->reason === 'invalid_form_data'
+            && $violation->exception !== null
+            && $responder::class === ValidationExceptionResponder::class
+        ) {
+            throw $violation->exception;
+        }
+
+        $responder->respond(HoneypotConfig::get('field_name'), $violation->message);
+    }
+
+    /**
+     * Return true when the submission is spam, without calling the responder or adding errors.
+     * Once a signed token is caught, every later submission with it is caught too.
+     * A form older than one hour still throws the normal validation error, so a visitor can reload.
+     * Answer a caught submission yourself, typically with a fake success.
+     */
+    public function isCaught(array $data, ?int $minimumSeconds = null): bool
+    {
+        if (static::$fake) {
+            return false;
+        }
+
+        $token = $data['hp_token'] ?? null;
+        $startedAt = $this->startedAtFromToken($token);
+
+        // Only authentic tokens with enough random characters are remembered.
+        $remember = is_string($token)
+            && $startedAt !== null
+            && strlen(explode('.', $token)[0]) >= CaughtTokens::MIN_REMEMBERED_LENGTH;
+
+        return CaughtTokens::check(
+            $remember ? $token : null,
+            fn (): ?HoneypotViolation => $this->detectViolation($data, $minimumSeconds, $startedAt),
+            fn () => event(HoneypotDetected::fromRequest(HoneypotConfig::get('field_name'), 'previously_detected')),
+        );
+    }
+
+    /**
+     * Return the first violation, or null for a clean submission.
+     * Dispatches HoneypotDetected but never responds.
+     *
+     * @param  int|null  $startedAt  The start time from startedAtFromToken(), or null for an invalid token
+     */
+    private function detectViolation(array $data, ?int $minimumSeconds, ?int $startedAt): ?HoneypotViolation
+    {
         $fieldName = HoneypotConfig::get('field_name');
         $minimumSeconds = $minimumSeconds ?? HoneypotConfig::get('minimum_fill_seconds');
         $now = now()->getTimestamp();
-        $startedAt = $this->startedAtFromToken($data['hp_token'] ?? null);
 
         // Never trust a timestamp supplied separately by the client.
         $data['hp_started_at'] = $startedAt;
+        $violation = null;
 
         try {
             validator($data, [
@@ -153,57 +211,32 @@ class HoneypotService
                 'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
             ])->validate();
         } catch (ValidationException $e) {
-            $errors = $e->errors();
-            $reason = isset($errors[$fieldName]) ? 'honeypot_filled' : 'invalid_form_data';
-
-            event(new HoneypotDetected(
-                fieldName: $fieldName,
-                reason: $reason,
-                ipAddress: request()->ip(),
-                userAgent: request()->userAgent(),
-            ));
-
-            /** @var \Blendbyte\LivewireHoneypot\Contracts\SpamResponder $responder */
-            $responder = app(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
-
-            // Preserve the default metadata error bag without bypassing subclass overrides.
-            if ($reason === 'invalid_form_data' && $responder::class === ValidationExceptionResponder::class) {
-                throw $e;
-            }
-
-            $responder->respond(
-                $fieldName,
-                $errors[$fieldName][0] ?? __('livewire-honeypot::validation.invalid_form_data'),
-            );
+            $violation = HoneypotViolation::fromValidationException($e, $fieldName);
         }
 
         // JS verification: field must be populated by Alpine.js on page load
         $jsMarker = $data['hp_js'] ?? null;
-        if (HoneypotConfig::get('require_js_verification') && (! is_string($jsMarker) || trim($jsMarker) === '')) {
-            event(new HoneypotDetected(
-                fieldName: $fieldName,
-                reason: 'js_verification_failed',
-                ipAddress: request()->ip(),
-                userAgent: request()->userAgent(),
-            ));
-
-            /** @var \Blendbyte\LivewireHoneypot\Contracts\SpamResponder $responder */
-            $responder = app(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
-            $responder->respond($fieldName, __('livewire-honeypot::validation.js_verification_failed'));
+        if ($violation === null
+            && HoneypotConfig::get('require_js_verification')
+            && (! is_string($jsMarker) || trim($jsMarker) === '')
+        ) {
+            $violation = new HoneypotViolation(
+                'js_verification_failed',
+                __('livewire-honeypot::validation.js_verification_failed'),
+            );
         }
 
-        $elapsed = $now - (int) $data['hp_started_at'];
-        if ($elapsed < $minimumSeconds) {
-            event(new HoneypotDetected(
-                fieldName: $fieldName,
-                reason: 'submitted_too_quickly',
-                ipAddress: request()->ip(),
-                userAgent: request()->userAgent(),
-            ));
-
-            /** @var \Blendbyte\LivewireHoneypot\Contracts\SpamResponder $responder */
-            $responder = app(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
-            $responder->respond($fieldName, __('livewire-honeypot::validation.submitted_too_quickly'));
+        if ($violation === null && $now - (int) $startedAt < $minimumSeconds) {
+            $violation = new HoneypotViolation(
+                'submitted_too_quickly',
+                __('livewire-honeypot::validation.submitted_too_quickly'),
+            );
         }
+
+        if ($violation !== null) {
+            event(HoneypotDetected::fromRequest($fieldName, $violation->reason));
+        }
+
+        return $violation;
     }
 }

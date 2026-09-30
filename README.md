@@ -68,6 +68,32 @@ By default, the hidden bait must stay empty, submissions must wait **5 seconds**
 
 Keep the trait on the Livewire component, including when using a Livewire `Form` object. Call `resetHoneypot()` after a successful submission to refresh the form's protection.
 
+### Silent rejection
+
+A validation error tells a bot it was caught, and it can wait and resubmit. To answer bots with a fake success instead, check `isHoneypotCaught()` and return early:
+
+```php
+public function submit(): void
+{
+    if ($this->isHoneypotCaught()) {
+        $this->success = true; // looks like success, nothing is saved or sent
+        return;
+    }
+
+    $this->validate(['email' => 'required|email']);
+
+    // Process the submission here.
+
+    $this->success = true;
+    $this->reset('email');
+    $this->resetHoneypot();
+}
+```
+
+`isHoneypotCaught()` never calls the configured responder or adds errors. Once a form's token is caught, every later submission from that form is caught too, even after waiting or clearing the bait field. Do not call `resetHoneypot()` for a caught submission: a fresh token would let the bot start over. For custom bindings, use `isHoneypotCaughtForModel('contact.trap')`; plain forms can use `HoneypotService::isCaught()`.
+
+Real users can be caught too, for example by autofilling and submitting faster than the minimum time, and they will see the same fake success. Stick with `validateHoneypot()` when a visible error is safer than losing a message silently. Forms open for more than an hour are not treated as spam: they still show the normal "Invalid form data." error, so the visitor can reload and send again.
+
 ## Configuration
 
 Most applications can use the defaults. To change the waiting time or enable detection logs:
@@ -146,7 +172,7 @@ For the package's own PHP and browser checks, see [running the test suites](docs
 ## More options
 
 - [Plain HTML forms](docs/plain-forms.md): signed tokens and controller validation.
-- [Advanced options](docs/advanced.md): CSP, responders, events, translations, and JS verification.
+- [Advanced options](docs/advanced.md): CSP, responders, silent rejection, events, translations, and JS verification.
 - [Upgrading existing integrations](docs/upgrading.md): published views, custom bindings, and signed tokens.
 
 Honeypots catch simple automation, not every bot. Keep normal validation, CSRF protection, and rate limiting on your forms.

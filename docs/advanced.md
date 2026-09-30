@@ -30,11 +30,25 @@ Honeypot checks use a separate validator, leaving application `withValidator()` 
 
 `RedirectResponder` stops the rejected action and uses Livewire's redirect effect for component requests. Plain forms receive a normal HTTP 302 redirect.
 
+## Silent rejection
+
+`isHoneypotCaught()`, `isHoneypotCaughtForModel()`, and `HoneypotService::isCaught()` return a boolean instead of responding, so the component or controller decides how to answer, typically with a fake success. They ignore `spam_responder` and never add validation errors.
+
+Caught tokens are remembered in the cache for one hour, which outlives the form they belong to. Later submissions with the same token are caught whatever their fields contain. Set `HONEYPOT_CAUGHT_CACHE_STORE` (`caught_cache_store`) to use a specific cache store; `null` uses the default store. If the store is unavailable or not defined, the error is reported once per submission through Laravel's exception handler and each submission is checked on its own, so forms keep working.
+
+Unsigned tokens, and tokens with fewer than 8 random characters, are caught but never remembered, so short random values cannot collide between visitors. Any `token_length` of 8 or more is remembered, including the default of 24.
+
+A form older than one hour is usually a visitor who left the tab open, so it is not answered with a fake success. The silent API throws the normal "Invalid form data." validation error instead, whatever `spam_responder` is set to, and does not remember the token. If the expired form also has another problem, such as a filled bait field, it is caught silently as usual. A token that was caught before its form expired stays caught.
+
+A Livewire token is locked, so a bot can only get a new one by loading the page again, which also restarts the waiting time. Plain forms remember the signed token.
+
+The fake success also applies to real users who are caught, such as someone who autofills a form and submits faster than `minimum_fill_seconds`. Their submission is silently dropped. Keep the minimum low, or use `validateHoneypot()` when a visible error is preferable.
+
 ## Detection events and logs
 
 Set `HONEYPOT_LOGGING=true` to log detections. `HONEYPOT_LOG_CHANNEL` selects the channel and `HONEYPOT_LOG_LEVEL` defaults to `warning`.
 
-For custom handling, listen for `Blendbyte\LivewireHoneypot\Events\HoneypotDetected`. Its properties are `reason`, `fieldName`, `ipAddress`, `userAgent`, and `component` (null outside Livewire). Reasons are `honeypot_filled`, `submitted_too_quickly`, `invalid_form_data`, and `js_verification_failed`.
+For custom handling, listen for `Blendbyte\LivewireHoneypot\Events\HoneypotDetected`. Its properties are `reason`, `fieldName`, `ipAddress`, `userAgent`, and `component` (null outside Livewire). Reasons are `honeypot_filled`, `submitted_too_quickly`, `invalid_form_data`, `js_verification_failed`, and `previously_detected`. The last one is used by the silent rejection API when a token that was already caught is submitted again.
 
 ## Optional JavaScript verification
 

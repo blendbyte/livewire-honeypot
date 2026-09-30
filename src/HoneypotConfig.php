@@ -21,6 +21,7 @@ final class HoneypotConfig
         ],
         'spam_responder' => ValidationExceptionResponder::class,
         'require_js_verification' => false,
+        'caught_cache_store' => null,
     ];
 
     /**

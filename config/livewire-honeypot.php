@@ -123,4 +123,18 @@ return [
 
     'require_js_verification' => (bool) env('HONEYPOT_JS_VERIFICATION', $defaults['require_js_verification']),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Caught Token Cache Store
+    |--------------------------------------------------------------------------
+    |
+    | The cache store used by isHoneypotCaught() and isCaught() to remember
+    | form tokens that were already caught, for one hour. Leave null to use
+    | the default cache store. If the store is unavailable or not defined,
+    | the error is reported and forms keep working without remembered tokens.
+    |
+    */
+
+    'caught_cache_store' => env('HONEYPOT_CAUGHT_CACHE_STORE', $defaults['caught_cache_store']),
+
 ];
