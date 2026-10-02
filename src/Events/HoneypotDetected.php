@@ -7,7 +7,7 @@ class HoneypotDetected
     /**
      * @param  string       $fieldName   The honeypot bait field name (e.g. "hp_website")
      * @param  string       $reason      Why detection was triggered:
-     *                                   "honeypot_filled" | "submitted_too_quickly" | "invalid_form_data" |
+     *                                   "honeypot_filled" | "submitted_too_quickly" | "form_expired" | "invalid_form_data" |
      *                                   "js_verification_failed" | "previously_detected"
      * @param  string|null  $ipAddress   IP address from the current request, if available
      * @param  string|null  $userAgent   User-agent from the current request, if available

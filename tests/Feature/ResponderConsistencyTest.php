@@ -30,7 +30,7 @@ dataset('honeypot rejection paths', [
     'missing bait' => ['missing', 'honeypot_filled'],
     'invalid token' => ['token', 'invalid_form_data'],
     'missing metadata' => ['metadata', 'invalid_form_data'],
-    'expired form' => ['expired', 'invalid_form_data'],
+    'expired form' => ['expired', 'form_expired'],
     'future timestamp' => ['future', 'invalid_form_data'],
     'too quick' => ['quick', 'submitted_too_quickly'],
     'missing JS marker' => ['js', 'js_verification_failed'],
@@ -63,8 +63,9 @@ test('Livewire uses the configured responder for every rejection', function (str
 
     if ($responder === CustomValidationResponder::class) {
         $component->assertJsonPath('field', 'contact.trap');
-        if ($reason === 'invalid_form_data') {
-            $component->assertJsonPath('message', __('livewire-honeypot::validation.' . ($scenario === 'expired' ? 'form_expired' : 'invalid_form_data')));
+        // Metadata reasons share their translation key with the message.
+        if (in_array($reason, ['invalid_form_data', 'form_expired'], true)) {
+            $component->assertJsonPath('message', __('livewire-honeypot::validation.' . $reason));
         }
     }
 })->with('configured responders')->with('honeypot rejection paths');
@@ -106,8 +107,9 @@ test('plain forms use the configured responder for every rejection', function (s
 
     if ($responder === CustomValidationResponder::class) {
         $response->assertJsonPath('field', 'trap');
-        if ($reason === 'invalid_form_data') {
-            $response->assertJsonPath('message', __('livewire-honeypot::validation.' . ($scenario === 'expired' ? 'form_expired' : 'invalid_form_data')));
+        // Metadata reasons share their translation key with the message.
+        if (in_array($reason, ['invalid_form_data', 'form_expired'], true)) {
+            $response->assertJsonPath('message', __('livewire-honeypot::validation.' . $reason));
         }
     }
 })->with('configured responders')->with('honeypot rejection paths');

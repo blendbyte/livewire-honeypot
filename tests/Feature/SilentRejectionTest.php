@@ -118,7 +118,7 @@ test('an expired form shows the normal error instead of a fake success', functio
         ->assertSet('success', false)
         ->assertSet('submissions', 0);
 
-    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'invalid_form_data');
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'form_expired');
     expect(Cache::has(CaughtTokens::key($component->get('hp_token'))))->toBeFalse();
 
     // Reloading the page gives the visitor a working form.

@@ -201,7 +201,7 @@ class HoneypotService
         $responder = app(SpamResponder::class);
 
         // Preserve the default metadata error bag without bypassing subclass overrides.
-        if ($violation->reason === 'invalid_form_data'
+        if (in_array($violation->reason, ['invalid_form_data', 'form_expired'], true)
             && $violation->exception !== null
             && $responder::class === ValidationExceptionResponder::class
         ) {

@@ -1,9 +1,11 @@
 <?php
 
+use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\HoneypotServiceProvider;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\Livewire;
@@ -70,6 +72,58 @@ test('components can override the maximum', function () {
     $this->travel(2)->hours();
 
     $component->call('submit')->assertHasNoErrors()->assertSet('submissions', 1);
+});
+
+// ---------------------------------------------------------------------------
+// Event reasons
+// ---------------------------------------------------------------------------
+
+test('an expired Livewire form is reported as form_expired', function () {
+    Event::fake([HoneypotDetected::class]);
+    $component = Livewire::test(ExpiryComponent::class);
+    $this->travel(3601)->seconds();
+
+    $component->call('submit')->assertHasErrors(['hp_started_at' => 'min']);
+
+    Event::assertDispatchedTimes(HoneypotDetected::class, 1);
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'form_expired');
+});
+
+test('an expired plain form is reported as form_expired and keeps its start-time error key', function () {
+    Event::fake([HoneypotDetected::class]);
+    $service = app(HoneypotService::class);
+    $data = $service->generate();
+    $this->travel(3601)->seconds();
+
+    try {
+        $service->validate($data);
+        $this->fail('The expired form was accepted.');
+    } catch (ValidationException $e) {
+        expect(array_keys($e->errors()))->toBe(['hp_started_at']);
+    }
+
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'form_expired');
+});
+
+test('a future start time is still reported as invalid_form_data', function () {
+    Event::fake([HoneypotDetected::class]);
+    $service = app(HoneypotService::class);
+    $data = ['hp_website' => '', 'hp_token' => $service->token(now()->addMinute()->getTimestamp())];
+
+    expect(fn () => $service->validate($data))->toThrow(ValidationException::class);
+
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'invalid_form_data');
+});
+
+test('an expired form with a filled bait is reported as honeypot_filled', function () {
+    Event::fake([HoneypotDetected::class]);
+    $service = app(HoneypotService::class);
+    $data = [...$service->generate(), 'hp_website' => 'spam'];
+    $this->travel(3601)->seconds();
+
+    expect(fn () => $service->validate($data))->toThrow(ValidationException::class, 'Spam detected.');
+
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'honeypot_filled');
 });
 
 // ---------------------------------------------------------------------------
