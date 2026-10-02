@@ -102,12 +102,21 @@ test('the time-trap error appears on submission and clears after a successful re
     $component->call('submit')->assertHasNoErrors()->assertDontSeeHtml('role="alert"');
 });
 
-test('an expired Livewire form shows its metadata validation error', function () {
+test('an expired Livewire form asks the visitor to reload', function () {
     $component = Livewire::test(ErrorDisplayComponent::class);
     $this->travel(3601)->seconds();
 
     $component->call('submit')
-        ->assertHasErrors('hp_started_at')
+        ->assertHasErrors(['hp_started_at' => 'min'])
+        ->assertSeeHtml('<p class="hp-error" role="alert">This form has expired. Please reload the page and try again.</p>');
+});
+
+test('a timestamp from the future still shows the generic metadata error', function () {
+    $component = Livewire::test(ErrorDisplayComponent::class);
+    $this->travel(-10)->seconds();
+
+    $component->call('submit')
+        ->assertHasErrors(['hp_started_at' => 'max'])
         ->assertSeeHtml('<p class="hp-error" role="alert">Invalid form data.</p>');
 });
 

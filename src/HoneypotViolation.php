@@ -25,10 +25,11 @@ final readonly class HoneypotViolation
     {
         $errors = $e->errors();
         $baitFailed = isset($errors[$fieldName]);
+        $metadataMessage = self::onlyExpired($e) ? 'form_expired' : 'invalid_form_data';
 
         return new self(
             reason: $baitFailed ? 'honeypot_filled' : 'invalid_form_data',
-            message: $errors[$fieldName][0] ?? __('livewire-honeypot::validation.invalid_form_data'),
+            message: $errors[$fieldName][0] ?? __('livewire-honeypot::validation.' . $metadataMessage),
             exception: $e,
             filledValue: $baitFailed ? self::stringify($baitValue) : null,
         );
@@ -53,7 +54,12 @@ final readonly class HoneypotViolation
      */
     public function isExpiredForm(): bool
     {
-        $failed = $this->exception?->validator->failed() ?? [];
+        return $this->exception !== null && self::onlyExpired($this->exception);
+    }
+
+    private static function onlyExpired(ValidationException $e): bool
+    {
+        $failed = $e->validator->failed();
 
         return array_keys($failed) === ['hp_started_at'] && array_keys($failed['hp_started_at']) === ['Min'];
     }

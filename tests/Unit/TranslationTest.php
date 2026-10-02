@@ -350,3 +350,21 @@ test('zh-TW: js_verification_failed', function () {
 
     expect(__('livewire-honeypot::validation.js_verification_failed'))->toBe('JavaScript驗證失敗。');
 });
+
+// ---------------------------------------------------------------------------
+// form_expired in every locale
+// ---------------------------------------------------------------------------
+
+test('every locale translates form_expired', function (string $locale) {
+    app()->setLocale($locale);
+
+    expect(__('livewire-honeypot::validation.form_expired'))
+        ->not->toBe('livewire-honeypot::validation.form_expired')
+        ->not->toBe(__('livewire-honeypot::validation.invalid_form_data'));
+})->with(fn () => array_map('basename', glob(dirname(__DIR__, 2) . '/resources/lang/*', GLOB_ONLYDIR)));
+
+test('en: form_expired', function () {
+    app()->setLocale('en');
+
+    expect(__('livewire-honeypot::validation.form_expired'))->toBe('This form has expired. Please reload the page and try again.');
+});

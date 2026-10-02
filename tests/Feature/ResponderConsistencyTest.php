@@ -64,7 +64,7 @@ test('Livewire uses the configured responder for every rejection', function (str
     if ($responder === CustomValidationResponder::class) {
         $component->assertJsonPath('field', 'contact.trap');
         if ($reason === 'invalid_form_data') {
-            $component->assertJsonPath('message', __('livewire-honeypot::validation.invalid_form_data'));
+            $component->assertJsonPath('message', __('livewire-honeypot::validation.' . ($scenario === 'expired' ? 'form_expired' : 'invalid_form_data')));
         }
     }
 })->with('configured responders')->with('honeypot rejection paths');
@@ -107,7 +107,7 @@ test('plain forms use the configured responder for every rejection', function (s
     if ($responder === CustomValidationResponder::class) {
         $response->assertJsonPath('field', 'trap');
         if ($reason === 'invalid_form_data') {
-            $response->assertJsonPath('message', __('livewire-honeypot::validation.invalid_form_data'));
+            $response->assertJsonPath('message', __('livewire-honeypot::validation.' . ($scenario === 'expired' ? 'form_expired' : 'invalid_form_data')));
         }
     }
 })->with('configured responders')->with('honeypot rejection paths');

@@ -267,7 +267,7 @@ class HoneypotService
                 }],
             ], [
                 "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
-                'hp_started_at.min' => __('livewire-honeypot::validation.invalid_form_data'),
+                'hp_started_at.min' => __('livewire-honeypot::validation.form_expired'),
                 'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
             ])->validate();
         } catch (ValidationException $e) {

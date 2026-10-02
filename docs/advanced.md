@@ -24,7 +24,7 @@ The default responder shows a validation error. The component displays the first
 
 The `spam_responder` config accepts `ValidationExceptionResponder`, `AbortResponder` (403), or `RedirectResponder` (redirect back), all under `Blendbyte\LivewireHoneypot\Responders`. Custom responders implement `Blendbyte\LivewireHoneypot\Contracts\SpamResponder::respond(string $fieldName, string $message): never` and must terminate execution.
 
-Configured responders handle bait, metadata, expiry, timing, and JS-verification failures in both Livewire and plain forms. Custom responders receive the bait field name (or custom model path) and a message; metadata failures use `invalid_form_data`. The built-in default preserves the existing validation error keys and rule details.
+Configured responders handle bait, metadata, expiry, timing, and JS-verification failures in both Livewire and plain forms. Custom responders receive the bait field name (or custom model path) and a message; an expired form uses `form_expired` and other metadata failures use `invalid_form_data`. The built-in default preserves the existing validation error keys and rule details.
 
 Honeypot checks use a separate validator, leaving application `withValidator()` and `prepareForValidation()` hooks for your normal form validation. Successful checks clear only honeypot errors.
 
@@ -38,7 +38,7 @@ Caught tokens are remembered in the cache for one hour, which outlives the form 
 
 Unsigned tokens, and tokens with fewer than 8 random characters, are caught but never remembered, so short random values cannot collide between visitors. Any `token_length` of 8 or more is remembered, including the default of 24.
 
-A form older than one hour is usually a visitor who left the tab open, so it is not answered with a fake success. The silent API throws the normal "Invalid form data." validation error instead, whatever `spam_responder` is set to, and does not remember the token. If the expired form also has another problem, such as a filled bait field, it is caught silently as usual. A token that was caught before its form expired stays caught.
+A form older than one hour is usually a visitor who left the tab open, so it is not answered with a fake success. The silent API throws the normal validation error instead, "This form has expired. Please reload the page and try again.", whatever `spam_responder` is set to, and does not remember the token. If the expired form also has another problem, such as a filled bait field, it is caught silently as usual. A token that was caught before its form expired stays caught.
 
 A Livewire token is locked, so a bot can only get a new one by loading the page again, which also restarts the waiting time. Plain forms remember the signed token.
 

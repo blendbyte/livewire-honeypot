@@ -5,5 +5,6 @@ return [
     'submitted_too_quickly' => 'Форма отправлена слишком быстро.',
     'honeypot_label' => 'Оставьте это поле пустым',
     'invalid_form_data' => 'Неверные данные формы.',
+    'form_expired' => 'Срок действия формы истёк. Перезагрузите страницу и попробуйте ещё раз.',
     'js_verification_failed' => 'Проверка JavaScript не пройдена.',
 ];

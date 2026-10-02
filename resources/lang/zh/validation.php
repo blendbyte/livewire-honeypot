@@ -5,5 +5,6 @@ return [
     'submitted_too_quickly' => '表单提交过快。',
     'honeypot_label' => '请将此字段留空',
     'invalid_form_data' => '无效的表单数据。',
+    'form_expired' => '此表单已过期。请刷新页面后重试。',
     'js_verification_failed' => 'JavaScript验证失败。',
 ];
