@@ -234,7 +234,7 @@ test('it fails when hp_token key is missing entirely', function () {
     $this->service->validate($data);
 })->throws(ValidationException::class);
 
-test('it respects custom token_min_length config', function () {
+test('it ignores the deprecated token_min_length', function () {
     config(['livewire-honeypot.token_min_length' => 15, 'livewire-honeypot.token_length' => 12]);
 
     $data = [
@@ -243,8 +243,8 @@ test('it respects custom token_min_length config', function () {
         'hp_token'      => $this->service->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
-    $this->service->validate($data);
-})->throws(ValidationException::class);
+    expect(fn () => $this->service->validate($data))->not->toThrow(ValidationException::class);
+});
 
 // ---------------------------------------------------------------------------
 // validate() — error messages and translations

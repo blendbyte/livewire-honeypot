@@ -144,7 +144,6 @@ Most applications can use the defaults. To change them, set these in `.env`:
 | `HONEYPOT_LOG_VALUE` | `false` | Also logs the bait value, shortened to 200 characters. It can contain a visitor's autofilled personal data. |
 | `HONEYPOT_CAUGHT_CACHE_STORE` | default store | The cache store for tokens caught by silent rejection. |
 | `HONEYPOT_TOKEN_LENGTH` | `24` | The length of the random part of a form token. |
-| `HONEYPOT_TOKEN_MIN_LENGTH` | `10` | The shortest random part accepted on submit. |
 
 The spam responder is chosen in the [configuration file](config/livewire-honeypot.php), which you can publish:
 

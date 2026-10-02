@@ -62,10 +62,7 @@ class HoneypotServiceProvider extends ServiceProvider
         ], 'livewire-honeypot-config');
 
         // Guard against misconfigured token lengths and fill times
-        HoneypotConfig::validateTokenLengths(
-            (int) HoneypotConfig::get('token_length'),
-            (int) HoneypotConfig::get('token_min_length'),
-        );
+        HoneypotConfig::validateTokenLength((int) HoneypotConfig::get('token_length'));
         HoneypotConfig::validateFillSeconds(
             (int) HoneypotConfig::get('minimum_fill_seconds'),
             (int) HoneypotConfig::get('maximum_fill_seconds'),

@@ -14,7 +14,6 @@ test('it merges the package config', function () {
     expect(config('livewire-honeypot.minimum_fill_seconds'))->toBeInt();
     expect(config('livewire-honeypot.maximum_fill_seconds'))->toBeInt();
     expect(config('livewire-honeypot.field_name'))->toBeString();
-    expect(config('livewire-honeypot.token_min_length'))->toBeInt();
     expect(config('livewire-honeypot.token_length'))->toBeInt();
     expect(config('livewire-honeypot.randomize_field_name'))->toBeBool();
     expect(config('livewire-honeypot.logging'))->toBeArray();
@@ -29,12 +28,12 @@ test('it registers the main config keys', function () {
         ->toHaveKey('minimum_fill_seconds')
         ->toHaveKey('maximum_fill_seconds')
         ->toHaveKey('field_name')
-        ->toHaveKey('token_min_length')
         ->toHaveKey('token_length')
         ->toHaveKey('randomize_field_name')
         ->toHaveKey('logging')
         ->toHaveKey('spam_responder')
-        ->toHaveKey('require_js_verification');
+        ->toHaveKey('require_js_verification')
+        ->not->toHaveKey('token_min_length');
 });
 
 test('it binds SpamResponder in the container', function () {
@@ -97,42 +96,19 @@ test('it registers the livewire-honeypot-config publish tag', function () {
 // Token configuration guard
 // ---------------------------------------------------------------------------
 
-test('it throws when token_length is less than token_min_length', function () {
+test('it ignores the deprecated token_min_length', function () {
     config([
         'livewire-honeypot.token_length'     => 5,
         'livewire-honeypot.token_min_length' => 10,
     ]);
 
     expect(fn () => (new HoneypotServiceProvider(app()))->boot())
-        ->toThrow(\InvalidArgumentException::class, 'token_length');
-});
-
-test('it does not throw when token_length equals token_min_length', function () {
-    config([
-        'livewire-honeypot.token_length'     => 10,
-        'livewire-honeypot.token_min_length' => 10,
-    ]);
-
-    expect(fn () => (new HoneypotServiceProvider(app()))->boot())
         ->not->toThrow(\InvalidArgumentException::class);
 });
 
-test('it rejects nonpositive global token lengths', function (int $length, int $minimum) {
-    config([
-        'livewire-honeypot.token_length' => $length,
-        'livewire-honeypot.token_min_length' => $minimum,
-    ]);
+test('it rejects nonpositive global token lengths', function (int $length) {
+    config(['livewire-honeypot.token_length' => $length]);
 
     expect(fn () => (new HoneypotServiceProvider(app()))->boot())
         ->toThrow(InvalidArgumentException::class, 'must be positive');
-})->with([[0, 0], [-1, -1], [24, 0], [24, -1]]);
-
-test('it does not throw when token_length is greater than token_min_length', function () {
-    config([
-        'livewire-honeypot.token_length'     => 24,
-        'livewire-honeypot.token_min_length' => 10,
-    ]);
-
-    expect(fn () => (new HoneypotServiceProvider(app()))->boot())
-        ->not->toThrow(\InvalidArgumentException::class);
-});
+})->with([0, -1]);

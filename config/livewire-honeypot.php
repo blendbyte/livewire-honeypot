@@ -49,18 +49,6 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Token Minimum Length
-    |--------------------------------------------------------------------------
-    |
-    | The minimum length for the locked Livewire token, or the random nonce
-    | inside a signed plain-form token. Plain forms also require a valid signature.
-    |
-    */
-
-    'token_min_length' => (int) env('HONEYPOT_TOKEN_MIN_LENGTH', $defaults['token_min_length']),
-
-    /*
-    |--------------------------------------------------------------------------
     | Token Length
     |--------------------------------------------------------------------------
     |

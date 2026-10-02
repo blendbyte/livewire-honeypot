@@ -125,7 +125,7 @@ class ConsistentResponderComponent extends Component
     {
         // Change locked metadata on the server to exercise invalid snapshots.
         if ($scenario === 'token') {
-            $this->hp_token = 'short';
+            $this->hp_token = '';
         } elseif ($scenario === 'metadata') {
             $this->hp_token = '';
             $this->hp_started_at = 0;

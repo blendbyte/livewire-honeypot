@@ -12,7 +12,6 @@ final class HoneypotConfig
         'minimum_fill_seconds' => 5,
         'maximum_fill_seconds' => 3600,
         'field_name' => 'hp_website',
-        'token_min_length' => 10,
         'token_length' => 24,
         'randomize_field_name' => true,
         'logging' => [
@@ -62,12 +61,11 @@ final class HoneypotConfig
         return $rules;
     }
 
-    public static function validateTokenLengths(int $length, int $minimum): void
+    public static function validateTokenLength(int $length): void
     {
-        if ($length < 1 || $minimum < 1 || $length < $minimum) {
+        if ($length < 1) {
             throw new \InvalidArgumentException(
-                "livewire-honeypot: token_length ({$length}) and token_min_length ({$minimum}) must be positive, " .
-                'and token_length must be greater than or equal to token_min_length. ' .
+                "livewire-honeypot: token_length ({$length}) must be positive. " .
                 'Check your livewire-honeypot config and honeypotConfig() overrides.'
             );
         }

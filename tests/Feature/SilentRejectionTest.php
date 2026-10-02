@@ -65,7 +65,7 @@ test('a caught submission looks successful without errors or real work', functio
 
         return 'future';
     }, 'invalid_form_data'],
-    'short token' => [function () {
+    'missing token' => [function () {
         test()->travel(10)->seconds();
 
         return 'token';
@@ -251,7 +251,7 @@ test('missing or short tokens are never remembered', function () {
 });
 
 test('only tokens with enough random characters are remembered', function (int $length, bool $remembered) {
-    config(['livewire-honeypot.token_length' => $length, 'livewire-honeypot.token_min_length' => $length]);
+    config(['livewire-honeypot.token_length' => $length]);
 
     $component = Livewire::test(SilentRejectionComponent::class);
     $component->call('submit')->assertSet('success', true)->assertSet('submissions', 0);
@@ -327,7 +327,7 @@ describe('plain forms', function () {
     });
 
     test('only signed tokens with enough random characters are remembered', function (int $length, bool $remembered) {
-        config(['livewire-honeypot.token_length' => $length, 'livewire-honeypot.token_min_length' => $length]);
+        config(['livewire-honeypot.token_length' => $length]);
         $data = app(HoneypotService::class)->generate();
 
         $this->postJson('/silent-contact', $data)->assertJson(['caught' => true]);
@@ -369,7 +369,7 @@ class SilentRejectionComponent extends Component
         if ($scenario === 'future') {
             $this->hp_started_at = now()->addMinute()->getTimestamp();
         } elseif ($scenario === 'token') {
-            $this->hp_token = 'short';
+            $this->hp_token = '';
         } elseif ($scenario === 'metadata') {
             $this->hp_token = '';
             $this->hp_started_at = 0;

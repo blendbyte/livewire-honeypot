@@ -71,32 +71,27 @@ test('a null JS marker does not block submissions when verification is disabled'
     Event::assertNotDispatched(HoneypotDetected::class);
 });
 
-test('invalid effective token lengths fail during component initialization', function (array $settings) {
-    EdgeCaseHoneypotComponent::$settings += $settings;
+test('invalid effective token lengths fail during component initialization', function (int $length) {
+    EdgeCaseHoneypotComponent::$settings += ['token_length' => $length];
     // Livewire wraps initialization exceptions in a view exception.
     expect(fn () => Livewire::test(EdgeCaseHoneypotComponent::class))
         ->toThrow(\Illuminate\View\ViewException::class, 'token_length');
-})->with([
-    'length below global minimum' => [['token_length' => 5]],
-    'minimum above global length' => [['token_min_length' => 32]],
-    'both overridden' => [['token_length' => 5, 'token_min_length' => 6]],
-    'zero lengths' => [['token_length' => 0, 'token_min_length' => 0]],
-    'negative lengths' => [['token_length' => -1, 'token_min_length' => -1]],
-]);
+})->with(['zero' => [0], 'negative' => [-1]]);
 
-test('valid effective token lengths work on mount and reset', function (int $length, int $minimum) {
-    EdgeCaseHoneypotComponent::$settings += ['token_length' => $length, 'token_min_length' => $minimum];
+test('valid effective token lengths work on mount and reset', function (int $length) {
+    // The deprecated token_min_length is ignored, even when it is larger than the length.
+    EdgeCaseHoneypotComponent::$settings += ['token_length' => $length, 'token_min_length' => 32];
     $component = Livewire::test(EdgeCaseHoneypotComponent::class);
     expect($component->hp_token)->toHaveLength($length);
     $component->call('submit')->assertHasNoErrors();
     expect($component->hp_token)->toHaveLength($length);
-})->with([[1, 1], [6, 5], [10, 10]]);
+})->with([1, 6, 10]);
 
 test('invalid token settings on reset fail before changing honeypot state', function () {
     $component = Livewire::test(EdgeCaseHoneypotComponent::class)->instance();
     $token = $component->hp_token;
     $component->trap = 'preserve';
-    EdgeCaseHoneypotComponent::$settings['token_length'] = 5;
+    EdgeCaseHoneypotComponent::$settings['token_length'] = 0;
 
     expect(fn () => $component->clearHoneypot())->toThrow(InvalidArgumentException::class, 'token_length');
     expect($component->hp_token)->toBe($token);

@@ -92,7 +92,6 @@ class HoneypotService
         [$nonce, $timestamp, $signature] = explode('.', $token);
 
         if (! ctype_alnum($nonce)
-            || strlen($nonce) < max(1, (int) HoneypotConfig::get('token_min_length'))
             || ! ctype_digit($timestamp)
             || strlen($signature) !== 64
         ) {

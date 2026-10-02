@@ -47,16 +47,16 @@ test('component-level token_length is used after reset', function () {
 });
 
 // ---------------------------------------------------------------------------
-// token_min_length override
+// Deprecated token_min_length
 // ---------------------------------------------------------------------------
 
-test('component-level token_min_length accepts shorter token', function () {
+test('a deprecated token_min_length does not reject shorter tokens', function () {
     config([
         'livewire-honeypot.minimum_fill_seconds' => 0,
         'livewire-honeypot.token_min_length'      => 20,
     ]);
 
-    // Component overrides token_min_length to 5, so a 6-char token passes
+    // Neither the global nor the component minimum applies to a 6-character token.
     $component = Livewire::test(ShortTokenMinComponent::class);
     expect($component->hp_token)->toHaveLength(6);
     $component->call('submit');
@@ -202,7 +202,7 @@ class ShortTokenMinComponent extends Component
 
     protected function honeypotConfig(): array
     {
-        return ['token_min_length' => 5, 'token_length' => 6];
+        return ['token_min_length' => 10, 'token_length' => 6];
     }
 
     public function submit(): void
