@@ -6,12 +6,12 @@ use Blendbyte\LivewireHoneypot\CaughtTokens;
 use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\HoneypotConfig;
+use Blendbyte\LivewireHoneypot\HoneypotDetector;
 use Blendbyte\LivewireHoneypot\HoneypotViolation;
 use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Illuminate\Validation\ValidationException;
 
 class HoneypotService
 {
@@ -247,56 +247,22 @@ class HoneypotService
     private function detectViolation(array $data, ?int $minimumSeconds, ?int $startedAt): ?HoneypotViolation
     {
         $fieldName = HoneypotConfig::get('field_name');
-        $minimumSeconds = $minimumSeconds ?? HoneypotConfig::get('minimum_fill_seconds');
-        $now = now()->getTimestamp();
-
         $data = $this->withDerivedBait($data, $fieldName);
 
         // Never trust a timestamp supplied separately by the client.
         $data['hp_started_at'] = $startedAt;
-        $violation = null;
 
-        try {
-            validator($data, [
-                $fieldName => 'present|size:0',
-                'hp_started_at' => HoneypotConfig::startedAtRules($now, (int) HoneypotConfig::get('maximum_fill_seconds')),
-                'hp_token' => ['required', 'string', function ($attribute, $value, $fail) use ($startedAt): void {
-                    if ($startedAt === null) {
-                        $fail(__('livewire-honeypot::validation.invalid_form_data'));
-                    }
-                }],
-            ], [
-                "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),
-                'hp_started_at.min' => __('livewire-honeypot::validation.form_expired'),
-                'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
-            ])->validate();
-        } catch (ValidationException $e) {
-            $violation = HoneypotViolation::fromValidationException($e, $fieldName, Arr::get($data, $fieldName));
-        }
-
-        // JS verification: field must be populated by Alpine.js on page load
-        $jsMarker = $data['hp_js'] ?? null;
-        if ($violation === null
-            && HoneypotConfig::get('require_js_verification')
-            && (! is_string($jsMarker) || trim($jsMarker) === '')
-        ) {
-            $violation = new HoneypotViolation(
-                'js_verification_failed',
-                __('livewire-honeypot::validation.js_verification_failed'),
-            );
-        }
-
-        if ($violation === null && $now - (int) $startedAt < $minimumSeconds) {
-            $violation = new HoneypotViolation(
-                'submitted_too_quickly',
-                __('livewire-honeypot::validation.submitted_too_quickly'),
-            );
-        }
-
-        if ($violation !== null) {
-            event(HoneypotDetected::fromRequest($fieldName, $violation->reason, filledValue: $violation->filledValue));
-        }
-
-        return $violation;
+        return HoneypotDetector::detect(
+            data: $data,
+            fieldName: $fieldName,
+            minimumSeconds: $minimumSeconds ?? (int) HoneypotConfig::get('minimum_fill_seconds'),
+            maximumSeconds: (int) HoneypotConfig::get('maximum_fill_seconds'),
+            requireJs: (bool) HoneypotConfig::get('require_js_verification'),
+            tokenRules: [function ($attribute, $value, $fail) use ($startedAt): void {
+                if ($startedAt === null) {
+                    $fail(__('livewire-honeypot::validation.invalid_form_data'));
+                }
+            }],
+        );
     }
 }
