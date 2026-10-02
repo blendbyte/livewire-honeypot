@@ -10,8 +10,8 @@ use Blendbyte\LivewireHoneypot\HoneypotViolation;
 use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Support\Arr;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class HoneypotService
 {
@@ -72,9 +72,9 @@ class HoneypotService
     {
         $key = $this->signingKeys()[0];
         $payload = Str::random(max(1, (int) HoneypotConfig::get('token_length')))
-            . '.' . ($startedAt ?? now()->getTimestamp());
+            .'.'.($startedAt ?? now()->getTimestamp());
 
-        return $payload . '.' . $this->sign($payload, $key);
+        return $payload.'.'.$this->sign($payload, $key);
     }
 
     /**
@@ -105,7 +105,7 @@ class HoneypotService
         }
 
         foreach ($keys as $key) {
-            if (hash_equals($this->sign($nonce . '.' . $timestamp, $key), $signature)) {
+            if (hash_equals($this->sign($nonce.'.'.$timestamp, $key), $signature)) {
                 return $startedAt;
             }
         }
@@ -119,7 +119,7 @@ class HoneypotService
         $key = config('app.key');
 
         if (! is_string($key) || $key === '') {
-            throw new MissingAppKeyException();
+            throw new MissingAppKeyException;
         }
 
         $previousKeys = array_filter(
@@ -132,7 +132,7 @@ class HoneypotService
 
     private function sign(string $payload, string $key): string
     {
-        return hash_hmac('sha256', 'livewire-honeypot|' . $payload, $key);
+        return hash_hmac('sha256', 'livewire-honeypot|'.$payload, $key);
     }
 
     /**
@@ -149,14 +149,14 @@ class HoneypotService
      */
     public function wrapperClass(): string
     {
-        return 'f' . substr($this->sign('wrapper', $this->signingKeys()[0]), 0, 8);
+        return 'f'.substr($this->sign('wrapper', $this->signingKeys()[0]), 0, 8);
     }
 
     private function baitNameWithKey(string $token, string $key): string
     {
-        $hash = $this->sign('bait|' . $token, $key);
+        $hash = $this->sign('bait|'.$token, $key);
 
-        return self::BAIT_WORDS[hexdec(substr($hash, 0, 2)) % count(self::BAIT_WORDS)] . '_' . substr($hash, 2, 4);
+        return self::BAIT_WORDS[hexdec(substr($hash, 0, 2)) % count(self::BAIT_WORDS)].'_'.substr($hash, 2, 4);
     }
 
     /**

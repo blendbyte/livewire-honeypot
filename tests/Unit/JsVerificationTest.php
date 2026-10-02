@@ -1,6 +1,9 @@
 <?php
 
+use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Validation\ValidationException;
 
 // ---------------------------------------------------------------------------
 // HoneypotService::validate() — JS verification
@@ -9,96 +12,96 @@ use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 test('js verification passes when hp_js is populated', function () {
     config(['livewire-honeypot.require_js_verification' => true]);
 
-    $service = new HoneypotService();
+    $service = new HoneypotService;
 
     $data = [
         config('livewire-honeypot.field_name', 'hp_website') => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
-        'hp_js'         => base64_encode((string) time()),
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_js' => base64_encode((string) time()),
     ];
 
     config(['livewire-honeypot.minimum_fill_seconds' => 0]);
 
-    expect(fn () => $service->validate($data))->not->toThrow(\Throwable::class);
+    expect(fn () => $service->validate($data))->not->toThrow(Throwable::class);
 });
 
 test('js verification fails when hp_js is empty', function () {
     config([
         'livewire-honeypot.require_js_verification' => true,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
-    $service = new HoneypotService();
+    $service = new HoneypotService;
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
 
     $data = [
-        $fieldName      => '',
+        $fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
-        'hp_js'         => '',
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_js' => '',
     ];
 
     expect(fn () => $service->validate($data))
-        ->toThrow(\Illuminate\Validation\ValidationException::class);
+        ->toThrow(ValidationException::class);
 });
 
 test('js verification fails when hp_js is missing from data', function () {
     config([
         'livewire-honeypot.require_js_verification' => true,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
-    $service = new HoneypotService();
+    $service = new HoneypotService;
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
 
     $data = [
-        $fieldName      => '',
+        $fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     expect(fn () => $service->validate($data))
-        ->toThrow(\Illuminate\Validation\ValidationException::class);
+        ->toThrow(ValidationException::class);
 });
 
 test('js verification fails when hp_js is whitespace only', function () {
     config([
         'livewire-honeypot.require_js_verification' => true,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
-    $service = new HoneypotService();
+    $service = new HoneypotService;
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
 
     $data = [
-        $fieldName      => '',
+        $fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
-        'hp_js'         => '   ',
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_js' => '   ',
     ];
 
     expect(fn () => $service->validate($data))
-        ->toThrow(\Illuminate\Validation\ValidationException::class);
+        ->toThrow(ValidationException::class);
 });
 
 test('js verification is skipped when disabled', function () {
     config([
         'livewire-honeypot.require_js_verification' => false,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
-    $service = new HoneypotService();
+    $service = new HoneypotService;
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
 
     $data = [
-        $fieldName      => '',
+        $fieldName => '',
         'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
-        'hp_js'         => '', // empty — but check is disabled
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_js' => '', // empty — but check is disabled
     ];
 
-    expect(fn () => $service->validate($data))->not->toThrow(\Throwable::class);
+    expect(fn () => $service->validate($data))->not->toThrow(Throwable::class);
 });
 
 test('js verification is disabled by default', function () {
@@ -113,27 +116,27 @@ test('js verification is disabled by default', function () {
 test('js verification failure dispatches HoneypotDetected event with correct reason', function () {
     config([
         'livewire-honeypot.require_js_verification' => true,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
-    \Illuminate\Support\Facades\Event::fake();
+    Event::fake();
 
-    $service = new HoneypotService();
+    $service = new HoneypotService;
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
 
     try {
         $service->validate([
-            $fieldName      => '',
+            $fieldName => '',
             'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
-            'hp_token'      => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
-            'hp_js'         => '',
+            'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+            'hp_js' => '',
         ]);
-    } catch (\Throwable) {
+    } catch (Throwable) {
         // expected
     }
 
-    \Illuminate\Support\Facades\Event::assertDispatched(
-        \Blendbyte\LivewireHoneypot\Events\HoneypotDetected::class,
+    Event::assertDispatched(
+        HoneypotDetected::class,
         fn ($event) => $event->reason === 'js_verification_failed'
     );
 });

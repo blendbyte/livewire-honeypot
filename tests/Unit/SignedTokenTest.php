@@ -34,9 +34,9 @@ test('changing any signed token part is rejected', function (int $part) {
     $data = $this->service->generate();
     $parts = explode('.', $data['hp_token']);
     $parts[$part] = match ($part) {
-        0 => ($parts[0][0] === 'a' ? 'b' : 'a') . substr($parts[0], 1),
+        0 => ($parts[0][0] === 'a' ? 'b' : 'a').substr($parts[0], 1),
         1 => (string) (now()->getTimestamp() - 10),
-        2 => ($parts[2][0] === 'a' ? 'b' : 'a') . substr($parts[2], 1),
+        2 => ($parts[2][0] === 'a' ? 'b' : 'a').substr($parts[2], 1),
     };
     $data['hp_token'] = implode('.', $parts);
     $this->travel(5)->seconds();
@@ -69,12 +69,12 @@ test('unsigned and malformed tokens are rejected', function (mixed $token) {
     'integer token' => [123],
     'boolean token' => [true],
     'extra segment' => ['nonce.123.signature.extra'],
-    'wrong signature' => [str_repeat('a', 24) . '.123.' . str_repeat('0', 64)],
+    'wrong signature' => [str_repeat('a', 24).'.123.'.str_repeat('0', 64)],
 ]);
 
 test('invalid timestamp encodings are rejected even with a valid signature', function (string $timestamp) {
-    $payload = str_repeat('a', 24) . '.' . $timestamp;
-    $token = $payload . '.' . hash_hmac('sha256', 'livewire-honeypot|' . $payload, config('app.key'));
+    $payload = str_repeat('a', 24).'.'.$timestamp;
+    $token = $payload.'.'.hash_hmac('sha256', 'livewire-honeypot|'.$payload, config('app.key'));
 
     expect($this->service->startedAtFromToken($token))->toBeNull();
 })->with(['0', '-1', '1e9', '1.5', str_repeat('9', 40), 'not-a-time']);
@@ -108,7 +108,7 @@ test('previous app keys keep open forms valid until the key is removed', functio
 
     config(['app.key' => $oldKey]);
     expect($this->service->startedAtFromToken($newToken))->toBeNull();
-})->with(['old-application-key', 'base64:' . base64_encode(str_repeat('k', 32))]);
+})->with(['old-application-key', 'base64:'.base64_encode(str_repeat('k', 32))]);
 
 test('derived bait names look like ordinary fields and differ per token', function () {
     $first = $this->service->token();
@@ -135,8 +135,8 @@ test('a derived bait name from a previous app key is still found', function () {
 
 test('empty previous keys cannot authenticate forged tokens', function () {
     config(['app.previous_keys' => ['', null, false, 0]]);
-    $payload = str_repeat('a', 24) . '.' . now()->subSeconds(10)->getTimestamp();
-    $forged = $payload . '.' . hash_hmac('sha256', 'livewire-honeypot|' . $payload, '');
+    $payload = str_repeat('a', 24).'.'.now()->subSeconds(10)->getTimestamp();
+    $forged = $payload.'.'.hash_hmac('sha256', 'livewire-honeypot|'.$payload, '');
 
     expect($this->service->startedAtFromToken($forged))->toBeNull();
 });

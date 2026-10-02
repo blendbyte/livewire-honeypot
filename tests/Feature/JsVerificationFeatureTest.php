@@ -35,7 +35,7 @@ test('hp_js is reset to empty string after resetHoneypot', function () {
 test('validation passes with empty hp_js when js verification is disabled', function () {
     config([
         'livewire-honeypot.require_js_verification' => false,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
     $component = Livewire::test(JsVerificationComponent::class);
@@ -52,7 +52,7 @@ test('validation passes with empty hp_js when js verification is disabled', func
 test('validation fails when js verification is enabled and hp_js is empty', function () {
     config([
         'livewire-honeypot.require_js_verification' => true,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
     $component = Livewire::test(JsVerificationComponent::class);
@@ -66,7 +66,7 @@ test('validation fails when js verification is enabled and hp_js is empty', func
 test('validation passes when js verification is enabled and hp_js is populated', function () {
     config([
         'livewire-honeypot.require_js_verification' => true,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
     $component = Livewire::test(JsVerificationComponent::class);
@@ -80,7 +80,7 @@ test('validation passes when js verification is enabled and hp_js is populated',
 test('js verification error uses the configured field_name', function () {
     config([
         'livewire-honeypot.require_js_verification' => true,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
@@ -95,7 +95,7 @@ test('js verification error uses the configured field_name', function () {
 test('js verification error message is correct', function () {
     config([
         'livewire-honeypot.require_js_verification' => true,
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
     $fieldName = config('livewire-honeypot.field_name', 'hp_website');
@@ -114,7 +114,7 @@ test('js verification error message is correct', function () {
 test('per-component config can enable js verification', function () {
     config([
         'livewire-honeypot.require_js_verification' => false, // global disabled
-        'livewire-honeypot.minimum_fill_seconds'    => 0,
+        'livewire-honeypot.minimum_fill_seconds' => 0,
     ]);
 
     $component = Livewire::test(JsVerificationOverrideComponent::class);
@@ -141,13 +141,13 @@ test('per-component config can disable globally enabled JS verification', functi
 test('JS input identity changes after a reset but remains stable on ordinary renders', function () {
     config(['livewire-honeypot.minimum_fill_seconds' => 0]);
     $component = Livewire::test(JsVerificationOverrideComponent::class);
-    $key = 'hp-js-' . $component->id() . '-' . $component->hp_token;
-    $component->assertSeeHtml('wire:key="' . $key . '"');
-    $component->call('$refresh')->assertSeeHtml('wire:key="' . $key . '"');
+    $key = 'hp-js-'.$component->id().'-'.$component->hp_token;
+    $component->assertSeeHtml('wire:key="'.$key.'"');
+    $component->call('$refresh')->assertSeeHtml('wire:key="'.$key.'"');
 
     $component->set('hp_js', '1')->call('submitWithJs')->assertHasNoErrors();
-    $component->assertSet('hp_js', '')->assertDontSeeHtml('wire:key="' . $key . '"');
-    $component->assertSeeHtml('wire:key="hp-js-' . $component->id() . '-' . $component->hp_token . '"');
+    $component->assertSet('hp_js', '')->assertDontSeeHtml('wire:key="'.$key.'"');
+    $component->assertSeeHtml('wire:key="hp-js-'.$component->id().'-'.$component->hp_token.'"');
 
     // PHP tests do not execute Alpine: each reset must require another client marker.
     $component->call('submitWithJs')->assertHasErrors('hp_website');
@@ -187,7 +187,7 @@ test('blade component leaves the verification value for JavaScript to populate',
 
     $html = renderInHoneypotComponent('<x-honeypot />');
 
-    $document = new DOMDocument();
+    $document = new DOMDocument;
     $document->loadHTML($html);
     $input = (new DOMXPath($document))->query('//input[@name="hp_js"]')->item(0);
 

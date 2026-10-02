@@ -4,12 +4,11 @@ use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
 use Blendbyte\LivewireHoneypot\HoneypotConfig;
 use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
-use Illuminate\Support\Facades\Blade;
 
 test('missing package settings retain the service and view defaults', function () {
     config(['livewire-honeypot' => []]);
     $this->freezeTime();
-    $service = new HoneypotService();
+    $service = new HoneypotService;
     $data = $service->generate();
 
     expect($data)->toHaveKey('hp_website', '');
@@ -24,7 +23,7 @@ test('missing package settings retain the service and view defaults', function (
 });
 
 test('the same service and view pick up runtime configuration changes', function () {
-    $service = new HoneypotService();
+    $service = new HoneypotService;
     $first = $service->generate();
     expect($first)->toHaveKey('hp_website');
     expect(renderInHoneypotComponent('<x-honeypot />'))->toContain('wire:model="hp_website"');

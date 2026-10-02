@@ -1,5 +1,6 @@
 <?php
 
+use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
 use Blendbyte\LivewireHoneypot\HoneypotServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
@@ -37,9 +38,9 @@ test('it registers the main config keys', function () {
 });
 
 test('it binds SpamResponder in the container', function () {
-    $responder = app(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
+    $responder = app(SpamResponder::class);
 
-    expect($responder)->toBeInstanceOf(\Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class);
+    expect($responder)->toBeInstanceOf(SpamResponder::class);
 });
 
 // ---------------------------------------------------------------------------
@@ -98,12 +99,12 @@ test('it registers the livewire-honeypot-config publish tag', function () {
 
 test('it ignores the deprecated token_min_length', function () {
     config([
-        'livewire-honeypot.token_length'     => 5,
+        'livewire-honeypot.token_length' => 5,
         'livewire-honeypot.token_min_length' => 10,
     ]);
 
     expect(fn () => (new HoneypotServiceProvider(app()))->boot())
-        ->not->toThrow(\InvalidArgumentException::class);
+        ->not->toThrow(InvalidArgumentException::class);
 });
 
 test('it rejects nonpositive global token lengths', function (int $length) {

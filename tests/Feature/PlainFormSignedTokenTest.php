@@ -1,8 +1,8 @@
 <?php
 
-use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\Responders\AbortResponder;
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;

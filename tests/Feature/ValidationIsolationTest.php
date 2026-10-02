@@ -54,7 +54,9 @@ class IsolatedValidationComponent extends Component
     use HasHoneypot;
 
     public string $email = 'blocked@example.com';
+
     public array $hookRules = [];
+
     public bool $processed = false;
 
     public function boot(): void
@@ -97,9 +99,15 @@ class WireableBaitData implements Wireable
 {
     public function __construct(public string $trap = '') {}
 
-    public function toLivewire(): array { return ['trap' => $this->trap]; }
+    public function toLivewire(): array
+    {
+        return ['trap' => $this->trap];
+    }
 
-    public static function fromLivewire($value): static { return new static($value['trap']); }
+    public static function fromLivewire($value): static
+    {
+        return new static($value['trap']);
+    }
 }
 
 class WireableBaitValidationComponent extends Component
@@ -107,9 +115,13 @@ class WireableBaitValidationComponent extends Component
     use HasHoneypot;
 
     public WireableBaitData $contact;
+
     public int $submissions = 0;
 
-    public function mount(): void { $this->contact = new WireableBaitData(); }
+    public function mount(): void
+    {
+        $this->contact = new WireableBaitData;
+    }
 
     public function submit(): void
     {
@@ -117,5 +129,8 @@ class WireableBaitValidationComponent extends Component
         $this->submissions++;
     }
 
-    public function render(): string { return '<div><x-honeypot wire:model="contact.trap" /></div>'; }
+    public function render(): string
+    {
+        return '<div><x-honeypot wire:model="contact.trap" /></div>';
+    }
 }

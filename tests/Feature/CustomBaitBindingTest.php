@@ -2,7 +2,6 @@
 
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Livewire\Component;
 use Livewire\Form;
@@ -11,9 +10,9 @@ use Livewire\Livewire;
 beforeEach(fn () => $this->freezeTime());
 
 test('the Blade component preserves custom binding modifiers', function (string $directive) {
-    $html = renderInHoneypotComponent('<x-honeypot ' . $directive . '="contact.trap" />');
+    $html = renderInHoneypotComponent('<x-honeypot '.$directive.'="contact.trap" />');
 
-    expect($html)->toContain($directive . '="contact.trap"')
+    expect($html)->toContain($directive.'="contact.trap"')
         ->not->toContain('wire:model="hp_website"');
 })->with(['wire:model', 'wire:model.blur', 'wire:model.live.debounce.500ms']);
 
@@ -44,7 +43,7 @@ test('a custom bait binding keeps the JS verification input bound independently'
 test('a filled custom bait is rejected while the default property is empty', function (string $class, string $model) {
     Event::fake([HoneypotDetected::class]);
     $component = Livewire::test($class);
-    $component->assertSeeHtml('wire:model="' . $model . '"');
+    $component->assertSeeHtml('wire:model="'.$model.'"');
     $this->travel(5)->seconds();
 
     $component->set($model, 'spam')->call('submit')
@@ -52,8 +51,7 @@ test('a filled custom bait is rejected while the default property is empty', fun
         ->assertSet('submitted', false)
         ->assertSet('hp_website', '');
 
-    Event::assertDispatched(HoneypotDetected::class, fn ($event) =>
-        $event->fieldName === $model && $event->reason === 'honeypot_filled'
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->fieldName === $model && $event->reason === 'honeypot_filled'
     );
 })->with([
     [CustomBaitComponent::class, 'trap'],
@@ -83,8 +81,7 @@ test('time-trap errors and events use the custom property path', function () {
     Livewire::test(NestedBaitComponent::class)->call('submit')
         ->assertHasErrors('contact.trap')->assertSet('submitted', false);
 
-    Event::assertDispatched(HoneypotDetected::class, fn ($event) =>
-        $event->fieldName === 'contact.trap' && $event->reason === 'submitted_too_quickly'
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->fieldName === 'contact.trap' && $event->reason === 'submitted_too_quickly'
     );
 });
 
@@ -102,8 +99,7 @@ test('JS verification still runs with a custom bait binding', function () {
     $this->travel(5)->seconds();
 
     $component->call('submit')->assertHasErrors('contact.trap')->assertSet('submitted', false);
-    Event::assertDispatched(HoneypotDetected::class, fn ($event) =>
-        $event->fieldName === 'contact.trap' && $event->reason === 'js_verification_failed'
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->fieldName === 'contact.trap' && $event->reason === 'js_verification_failed'
     );
 
     $component->set('hp_js', 'browser-value')->call('submit')
@@ -143,6 +139,7 @@ test('per-component field_name still supplies the default validation target', fu
 class BaitContactForm extends Form
 {
     public string $trap = '';
+
     public string $name = '';
 
     protected function rules(): array
@@ -156,11 +153,17 @@ class CustomBaitComponent extends Component
     use HasHoneypot;
 
     public string $trap = '';
+
     public array $contact = ['trap' => '', 'name' => 'Alice'];
+
     public BaitContactForm $form;
+
     public bool $submitted = false;
 
-    protected function baitModel(): string { return 'trap'; }
+    protected function baitModel(): string
+    {
+        return 'trap';
+    }
 
     public function submit(?int $minimumSeconds = null): void
     {
@@ -176,23 +179,32 @@ class CustomBaitComponent extends Component
 
     public function render(): string
     {
-        return '<div><x-honeypot wire:model="' . $this->baitModel() . '" /></div>';
+        return '<div><x-honeypot wire:model="'.$this->baitModel().'" /></div>';
     }
 }
 
 class NestedBaitComponent extends CustomBaitComponent
 {
-    protected function baitModel(): string { return 'contact.trap'; }
+    protected function baitModel(): string
+    {
+        return 'contact.trap';
+    }
 }
 
 class FormObjectBaitComponent extends CustomBaitComponent
 {
-    protected function baitModel(): string { return 'form.trap'; }
+    protected function baitModel(): string
+    {
+        return 'form.trap';
+    }
 }
 
 class ConfiguredBaitComponent extends CustomBaitComponent
 {
-    protected function honeypotConfig(): array { return ['field_name' => 'trap']; }
+    protected function honeypotConfig(): array
+    {
+        return ['field_name' => 'trap'];
+    }
 
     public function submit(?int $minimumSeconds = null): void
     {

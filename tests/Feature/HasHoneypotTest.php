@@ -2,6 +2,7 @@
 
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
+use Illuminate\View\ViewException;
 use Livewire\Component;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
@@ -201,7 +202,7 @@ test('it resets honeypot after submission', function () {
 test('it generates a new token of the correct length on reset', function () {
     config([
         'livewire-honeypot.minimum_fill_seconds' => 0,
-        'livewire-honeypot.token_length'          => 48,
+        'livewire-honeypot.token_length' => 48,
     ]);
 
     $component = Livewire::test(TestComponent::class);
@@ -219,7 +220,7 @@ test('it throws LogicException when custom field_name property is not declared',
 
     Livewire::test(TestComponent::class);
     // Livewire wraps mount exceptions in ViewException; the original LogicException message is preserved
-})->throws(\Illuminate\View\ViewException::class, 'my_trap');
+})->throws(ViewException::class, 'my_trap');
 
 test('it works with a custom field_name when property is declared', function () {
     config(['livewire-honeypot.field_name' => 'my_trap']);
@@ -263,7 +264,7 @@ test('the default view renders the derived name but keeps the bait binding', fun
     config(['livewire-honeypot.minimum_fill_seconds' => 0]);
 
     $component = Livewire::test(TestComponent::class);
-    $component->assertSeeHtml('name="' . $component->hp_field_name . '"')
+    $component->assertSeeHtml('name="'.$component->hp_field_name.'"')
         ->assertSeeHtml('wire:model="hp_website"')
         ->assertDontSeeHtml('name="hp_website"');
 

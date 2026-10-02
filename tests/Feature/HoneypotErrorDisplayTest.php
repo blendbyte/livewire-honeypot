@@ -11,14 +11,14 @@ beforeEach(fn () => $this->freezeTime());
 
 function renderHoneypotWithErrors(array $messages, string $template = '<x-honeypot />'): string
 {
-    view()->share('errors', (new ViewErrorBag())->put('default', new MessageBag($messages)));
+    view()->share('errors', (new ViewErrorBag)->put('default', new MessageBag($messages)));
 
     return renderInHoneypotComponent($template);
 }
 
 test('honeypot errors are visible outside the hidden wrapper', function () {
     $html = renderHoneypotWithErrors(['hp_website' => 'Form submitted too quickly.']);
-    $document = new DOMDocument();
+    $document = new DOMDocument;
     $document->loadHTML($html);
     $xpath = new DOMXPath($document);
 
@@ -56,7 +56,7 @@ test('the configured field name determines the default error key', function () {
 test('the error key follows custom bindings rather than randomized HTML names', function (string $directive) {
     $html = renderHoneypotWithErrors(
         ['contact.trap' => 'Spam detected.'],
-        '<x-honeypot ' . $directive . '="contact.trap" field-name="hp_random" />',
+        '<x-honeypot '.$directive.'="contact.trap" field-name="hp_random" />',
     );
 
     expect($html)->toContain('<p class="hp-error" role="alert">Spam detected.</p>')

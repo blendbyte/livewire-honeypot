@@ -97,7 +97,7 @@ return [
     'logging' => [
         'enabled' => (bool) env('HONEYPOT_LOGGING', $defaults['logging']['enabled']),
         'channel' => env('HONEYPOT_LOG_CHANNEL', $defaults['logging']['channel']),
-        'level'   => env('HONEYPOT_LOG_LEVEL', $defaults['logging']['level']),
+        'level' => env('HONEYPOT_LOG_LEVEL', $defaults['logging']['level']),
         'include_value' => (bool) env('HONEYPOT_LOG_VALUE', $defaults['logging']['include_value']),
     ],
 

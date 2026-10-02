@@ -361,7 +361,7 @@ test('every locale translates form_expired', function (string $locale) {
     expect(__('livewire-honeypot::validation.form_expired'))
         ->not->toBe('livewire-honeypot::validation.form_expired')
         ->not->toBe(__('livewire-honeypot::validation.invalid_form_data'));
-})->with(fn () => array_map('basename', glob(dirname(__DIR__, 2) . '/resources/lang/*', GLOB_ONLYDIR)));
+})->with(fn () => array_map('basename', glob(dirname(__DIR__, 2).'/resources/lang/*', GLOB_ONLYDIR)));
 
 test('en: form_expired', function () {
     app()->setLocale('en');

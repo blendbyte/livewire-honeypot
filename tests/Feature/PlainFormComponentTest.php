@@ -28,7 +28,7 @@ beforeEach(function () {
  */
 function plainHoneypotFields(string $html): array
 {
-    $document = new DOMDocument();
+    $document = new DOMDocument;
     @$document->loadHTML($html);
     $xpath = new DOMXPath($document);
 

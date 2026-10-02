@@ -1,5 +1,6 @@
 <?php
 
+use Blendbyte\LivewireHoneypot\CaughtTokens;
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\HoneypotServiceProvider;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
@@ -199,7 +200,7 @@ test('a caught Livewire token follows the component maximum', function () {
 
     $this->travel(3700)->seconds();
     $component->set('hp_website', '')->call('check')->assertSet('caught', true);
-    expect(Cache::has(\Blendbyte\LivewireHoneypot\CaughtTokens::key($component->hp_token)))->toBeTrue();
+    expect(Cache::has(CaughtTokens::key($component->hp_token)))->toBeTrue();
 });
 
 class ExpiryComponent extends Component
@@ -207,7 +208,9 @@ class ExpiryComponent extends Component
     use HasHoneypot;
 
     public static array $settings = [];
+
     public int $submissions = 0;
+
     public bool $caught = false;
 
     protected function honeypotConfig(): array

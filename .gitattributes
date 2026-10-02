@@ -9,5 +9,6 @@
 /phpunit.xml        export-ignore
 /phpstan.neon       export-ignore
 /phpstan            export-ignore
+/pint.json          export-ignore
 /composer.lock      export-ignore
 /SECURITY.md        export-ignore

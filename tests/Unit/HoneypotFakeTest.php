@@ -4,7 +4,7 @@ use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
-    $this->service = new HoneypotService();
+    $this->service = new HoneypotService;
     $this->fieldName = config('livewire-honeypot.field_name', 'hp_website');
 });
 
@@ -35,8 +35,8 @@ test('validate() is bypassed when fake mode is active', function () {
     // This data would normally fail (honeypot filled, no token, zero timestamp)
     $this->service->validate([
         $this->fieldName => 'filled by bot',
-        'hp_started_at'  => 0,
-        'hp_token'       => '',
+        'hp_started_at' => 0,
+        'hp_token' => '',
     ]);
 
     expect(true)->toBeTrue(); // reached here = no exception thrown
@@ -45,8 +45,8 @@ test('validate() is bypassed when fake mode is active', function () {
 test('validate() still throws when fake mode is not active', function () {
     $data = [
         $this->fieldName => 'filled by bot',
-        'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -58,8 +58,8 @@ test('validate() resumes normal behaviour after resetFake()', function () {
 
     $data = [
         $this->fieldName => 'filled by bot',
-        'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);

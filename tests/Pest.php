@@ -13,7 +13,7 @@ uses(TestCase::class)->in(__DIR__);
  */
 function renderInHoneypotComponent(string $template, array $data = []): string
 {
-    $component = new BladeHostHoneypotComponent();
+    $component = new BladeHostHoneypotComponent;
     $component->setId('blade-host');
     $component->mountHasHoneypot();
 
@@ -31,6 +31,7 @@ class BladeHostHoneypotComponent extends Component
     use HasHoneypot;
 
     public array $contact = ['trap' => ''];
+
     public string $trap = '';
 
     public function render(): string

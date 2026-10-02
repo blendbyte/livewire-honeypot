@@ -31,15 +31,15 @@ final class HoneypotConfig
      */
     public static function get(string $key, mixed $default = null): mixed
     {
-        return config('livewire-honeypot.' . $key, $default ?? Arr::get(self::DEFAULTS, $key));
+        return config('livewire-honeypot.'.$key, $default ?? Arr::get(self::DEFAULTS, $key));
     }
 
     public static function validateFillSeconds(int $minimum, int $maximum): void
     {
         if ($maximum < 0 || ($maximum > 0 && $maximum <= $minimum)) {
             throw new \InvalidArgumentException(
-                "livewire-honeypot: maximum_fill_seconds ({$maximum}) must be 0 to disable form expiry, " .
-                "or greater than minimum_fill_seconds ({$minimum}). " .
+                "livewire-honeypot: maximum_fill_seconds ({$maximum}) must be 0 to disable form expiry, ".
+                "or greater than minimum_fill_seconds ({$minimum}). ".
                 'Check your livewire-honeypot config and honeypotConfig() overrides.'
             );
         }
@@ -52,10 +52,10 @@ final class HoneypotConfig
      */
     public static function startedAtRules(int $now, int $maximumSeconds): array
     {
-        $rules = ['required', 'integer', 'max:' . $now];
+        $rules = ['required', 'integer', 'max:'.$now];
 
         if ($maximumSeconds > 0) {
-            $rules[] = 'min:' . ($now - $maximumSeconds);
+            $rules[] = 'min:'.($now - $maximumSeconds);
         }
 
         return $rules;
@@ -65,7 +65,7 @@ final class HoneypotConfig
     {
         if ($length < 1) {
             throw new \InvalidArgumentException(
-                "livewire-honeypot: token_length ({$length}) must be positive. " .
+                "livewire-honeypot: token_length ({$length}) must be positive. ".
                 'Check your livewire-honeypot config and honeypotConfig() overrides.'
             );
         }

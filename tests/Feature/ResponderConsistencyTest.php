@@ -56,8 +56,7 @@ test('Livewire uses the configured responder for every rejection', function (str
     }
     expect(ConsistentResponderComponent::$processed)->toBeFalse();
     Event::assertDispatchedTimes(HoneypotDetected::class, 1);
-    Event::assertDispatched(HoneypotDetected::class, fn ($event) =>
-        $event->reason === $reason && $event->fieldName === 'contact.trap'
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === $reason && $event->fieldName === 'contact.trap'
         && $event->component === ConsistentResponderComponent::class
     );
 
@@ -65,7 +64,7 @@ test('Livewire uses the configured responder for every rejection', function (str
         $component->assertJsonPath('field', 'contact.trap');
         // Metadata reasons share their translation key with the message.
         if (in_array($reason, ['invalid_form_data', 'form_expired'], true)) {
-            $component->assertJsonPath('message', __('livewire-honeypot::validation.' . $reason));
+            $component->assertJsonPath('message', __('livewire-honeypot::validation.'.$reason));
         }
     }
 })->with('configured responders')->with('honeypot rejection paths');
@@ -88,11 +87,16 @@ test('plain forms use the configured responder for every rejection', function (s
     $this->travel($scenario === 'expired' ? 3601 : ($scenario === 'quick' ? 0 : 5))->seconds();
 
     switch ($scenario) {
-        case 'filled': $data['trap'] = 'spam'; break;
-        case 'missing': unset($data['trap']); break;
-        case 'token': $data['hp_token'] = 'invalid'; break;
-        case 'metadata': unset($data['hp_token']); break;
-        case 'future': $data['hp_token'] = $service->token(now()->addMinute()->getTimestamp()); break;
+        case 'filled': $data['trap'] = 'spam';
+            break;
+        case 'missing': unset($data['trap']);
+            break;
+        case 'token': $data['hp_token'] = 'invalid';
+            break;
+        case 'metadata': unset($data['hp_token']);
+            break;
+        case 'future': $data['hp_token'] = $service->token(now()->addMinute()->getTimestamp());
+            break;
     }
 
     $response = $this->from('/contact')->postJson('/responder-contact', $data)->assertStatus($status);
@@ -101,15 +105,14 @@ test('plain forms use the configured responder for every rejection', function (s
     }
     expect($processed)->toBeFalse();
     Event::assertDispatchedTimes(HoneypotDetected::class, 1);
-    Event::assertDispatched(HoneypotDetected::class, fn ($event) =>
-        $event->reason === $reason && $event->fieldName === 'trap' && $event->component === null
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === $reason && $event->fieldName === 'trap' && $event->component === null
     );
 
     if ($responder === CustomValidationResponder::class) {
         $response->assertJsonPath('field', 'trap');
         // Metadata reasons share their translation key with the message.
         if (in_array($reason, ['invalid_form_data', 'form_expired'], true)) {
-            $response->assertJsonPath('message', __('livewire-honeypot::validation.' . $reason));
+            $response->assertJsonPath('message', __('livewire-honeypot::validation.'.$reason));
         }
     }
 })->with('configured responders')->with('honeypot rejection paths');
@@ -119,6 +122,7 @@ class ConsistentResponderComponent extends Component
     use HasHoneypot;
 
     public array $contact = ['trap' => ''];
+
     public static bool $processed = false;
 
     public function submit(string $scenario): void

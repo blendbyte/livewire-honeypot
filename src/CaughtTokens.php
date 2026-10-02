@@ -2,6 +2,7 @@
 
 namespace Blendbyte\LivewireHoneypot;
 
+use Illuminate\Contracts\Cache\Repository;
 use Illuminate\Support\Facades\Cache;
 
 /**
@@ -64,7 +65,7 @@ final class CaughtTokens
 
     public static function key(string $token): string
     {
-        return 'livewire-honeypot:caught:' . hash('sha256', $token);
+        return 'livewire-honeypot:caught:'.hash('sha256', $token);
     }
 
     /** Return null when the cache store is unavailable. */
@@ -88,7 +89,7 @@ final class CaughtTokens
         }
     }
 
-    private static function store(): \Illuminate\Contracts\Cache\Repository
+    private static function store(): Repository
     {
         $store = HoneypotConfig::get('caught_cache_store');
 

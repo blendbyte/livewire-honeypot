@@ -60,6 +60,7 @@ class MisusedHoneypotForm extends Form
 class MisusedHoneypotFormComponent extends Component
 {
     public MisusedHoneypotForm $form;
+
     public bool $submitted = false;
 
     public function submit(bool $customModel): void
@@ -79,6 +80,7 @@ class MissingMetadataHoneypotComponent extends Component
     use HasHoneypot;
 
     public string $trap = '';
+
     public bool $submitted = false;
 
     public function submit(bool $customModel): void

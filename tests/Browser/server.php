@@ -1,14 +1,15 @@
 <?php
 
 // Local Testbench application used only by the Playwright regression suite.
-require dirname(__DIR__, 2) . '/vendor/autoload.php';
+require dirname(__DIR__, 2).'/vendor/autoload.php';
 
-use Blendbyte\LivewireHoneypot\Tests\TestCase;
 use Blendbyte\LivewireHoneypot\Responders\RedirectResponder;
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
+use Blendbyte\LivewireHoneypot\Tests\TestCase;
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
@@ -18,7 +19,8 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Livewire;
 
-$test = new class('browser') extends TestCase {
+$test = new class('browser') extends TestCase
+{
     public function bootBrowser(): void
     {
         $this->setUp();
@@ -28,7 +30,7 @@ $test = new class('browser') extends TestCase {
     {
         parent::getEnvironmentSetUp($app);
         // Stable across HTTP requests so Livewire can verify its snapshots.
-        $app['config']->set('app.key', 'base64:' . base64_encode(str_repeat('b', 32)));
+        $app['config']->set('app.key', 'base64:'.base64_encode(str_repeat('b', 32)));
         $app['config']->set('livewire.csp_safe', getenv('HONEYPOT_BROWSER_CSP') === '1');
         $app['config']->set('livewire-honeypot.minimum_fill_seconds', 0);
         $app['config']->set('livewire-honeypot.require_js_verification', false);
@@ -42,10 +44,14 @@ class JsVerificationBrowserComponent extends Component
 
     #[Locked]
     public bool $custom = false;
+
     #[Locked]
     public bool $redirectSpam = false;
+
     public array $contact = ['trap' => ''];
+
     public string $email = '';
+
     public int $submissions = 0;
 
     protected function honeypotConfig(): array
@@ -114,12 +120,12 @@ function browserCspPolicy(): string
         $policy .= " 'unsafe-eval'";
     }
 
-    return $policy . "; style-src 'self' 'nonce-browser-test-nonce'";
+    return $policy."; style-src 'self' 'nonce-browser-test-nonce'";
 }
 
 // A plain form posting to a controller, with JS verification enabled and no Livewire or Alpine on the page.
 // The session driver does not persist between requests here, so the POST renders the outcome directly.
-function plainBrowserPage(bool $accepted = false): Illuminate\Http\Response
+function plainBrowserPage(bool $accepted = false): Response
 {
     config(['livewire-honeypot.require_js_verification' => true]);
     $html = Blade::render(<<<'BLADE'
@@ -145,7 +151,7 @@ Route::middleware('web')->post('/plain', function (Request $request, HoneypotSer
     try {
         $honeypot->validate($request->all());
     } catch (ValidationException $e) {
-        view()->share('errors', (new ViewErrorBag())->put('default', $e->validator->errors()));
+        view()->share('errors', (new ViewErrorBag)->put('default', $e->validator->errors()));
 
         return plainBrowserPage();
     }
@@ -166,11 +172,11 @@ Route::middleware('web')->get('/{mode?}', function (string $mode = 'default') {
 @livewireScripts
 </body></html>
 BLADE, [
-    'custom' => $mode === 'custom',
-    'multiple' => $mode === 'multiple',
-    'redirectSpam' => $mode === 'redirect',
-    'configured' => $mode === 'configured',
-]);
+        'custom' => $mode === 'custom',
+        'multiple' => $mode === 'multiple',
+        'redirectSpam' => $mode === 'redirect',
+        'configured' => $mode === 'configured',
+    ]);
 
     return response($html)->header('Content-Security-Policy', browserCspPolicy());
 });

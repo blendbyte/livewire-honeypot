@@ -27,7 +27,7 @@ test('default responder shows validation error on honeypot fill', function () {
 // ---------------------------------------------------------------------------
 
 test('AbortResponder returns 403 when submitted too quickly via trait', function () {
-    app()->bind(SpamResponder::class, fn () => new AbortResponder());
+    app()->bind(SpamResponder::class, fn () => new AbortResponder);
 
     // Trigger the time-trap: hp_started_at just set, so elapsed < minimum_fill_seconds
     $component = Livewire::test(ResponderTestComponent::class);
@@ -41,7 +41,7 @@ test('AbortResponder returns 403 when submitted too quickly via trait', function
 // ---------------------------------------------------------------------------
 
 test('RedirectResponder returns a redirect response when submitted too quickly via trait', function () {
-    app()->bind(SpamResponder::class, fn () => new RedirectResponder());
+    app()->bind(SpamResponder::class, fn () => new RedirectResponder);
 
     $component = Livewire::test(ResponderTestComponent::class);
     $component->call('submit');

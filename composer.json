@@ -30,11 +30,14 @@
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-laravel": "^4.0",
         "pestphp/pest-plugin-livewire": "^4.0",
-        "larastan/larastan": "^3.0"
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.32"
     },
     "scripts": {
         "test": "vendor/bin/pest",
-        "analyse": "vendor/bin/phpstan analyse --ansi --memory-limit=512M"
+        "analyse": "vendor/bin/phpstan analyse --ansi --memory-limit=512M",
+        "lint": "vendor/bin/pint --test",
+        "format": "vendor/bin/pint"
     },
     "minimum-stability": "stable",
     "prefer-stable": true,

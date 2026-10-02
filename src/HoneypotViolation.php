@@ -30,7 +30,7 @@ final readonly class HoneypotViolation
 
         return new self(
             reason: $baitFailed ? 'honeypot_filled' : $metadataReason,
-            message: $errors[$fieldName][0] ?? __('livewire-honeypot::validation.' . $metadataReason),
+            message: $errors[$fieldName][0] ?? __('livewire-honeypot::validation.'.$metadataReason),
             exception: $e,
             filledValue: $baitFailed ? self::stringify($baitValue) : null,
         );

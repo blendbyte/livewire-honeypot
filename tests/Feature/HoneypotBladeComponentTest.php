@@ -1,6 +1,7 @@
 <?php
 
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
+use Illuminate\Support\Facades\Vite;
 
 // ---------------------------------------------------------------------------
 // Blade component: <x-honeypot />
@@ -54,8 +55,8 @@ test('it hides the wrapper with screen-reader-only CSS under an inconspicuous cl
     $html = Blade::render('<x-honeypot />');
 
     expect($class)->toMatch('/^f[0-9a-f]{8}$/');
-    expect($html)->toContain('<div class="' . $class . '" aria-hidden="true">')
-        ->toContain('.' . $class . ' {')
+    expect($html)->toContain('<div class="'.$class.'" aria-hidden="true">')
+        ->toContain('.'.$class.' {')
         ->toContain('clip-path: inset(50%)')
         ->not->toContain('hp-field')
         ->not->toContain('-10000px')
@@ -73,19 +74,19 @@ test('the wrapper class is stable per app key', function () {
 });
 
 test('it uses the Vite CSP nonce on its hiding stylesheet', function () {
-    \Illuminate\Support\Facades\Vite::useCspNonce('vite-nonce');
+    Vite::useCspNonce('vite-nonce');
 
     $html = Blade::render('<x-honeypot />');
 
     $class = app(HoneypotService::class)->wrapperClass();
 
     expect($html)->toMatch('/<style\s+nonce="vite-nonce"\s*>/')
-        ->toContain('class="' . $class . '"')
-        ->toContain('.' . $class . ' {');
+        ->toContain('class="'.$class.'"')
+        ->toContain('.'.$class.' {');
 });
 
 test('an explicit CSP nonce takes precedence over the Vite nonce', function () {
-    \Illuminate\Support\Facades\Vite::useCspNonce('vite-nonce');
+    Vite::useCspNonce('vite-nonce');
 
     $html = Blade::render('<x-honeypot :nonce="$nonce" />', ['nonce' => 'explicit-nonce']);
 

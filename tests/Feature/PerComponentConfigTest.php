@@ -1,7 +1,6 @@
 <?php
 
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
-use Illuminate\Validation\ValidationException;
 use Livewire\Component;
 use Livewire\Livewire;
 
@@ -53,7 +52,7 @@ test('component-level token_length is used after reset', function () {
 test('a deprecated token_min_length does not reject shorter tokens', function () {
     config([
         'livewire-honeypot.minimum_fill_seconds' => 0,
-        'livewire-honeypot.token_min_length'      => 20,
+        'livewire-honeypot.token_min_length' => 20,
     ]);
 
     // Neither the global nor the component minimum applies to a 6-character token.
@@ -126,7 +125,10 @@ class DefaultConfigComponent extends Component
         $this->resetHoneypot();
     }
 
-    public function render(): string { return '<div></div>'; }
+    public function render(): string
+    {
+        return '<div></div>';
+    }
 }
 
 class FalsyConfigComponent extends DefaultConfigComponent
@@ -157,7 +159,10 @@ class FastFormComponent extends Component
         $this->resetHoneypot();
     }
 
-    public function render(): string { return '<div></div>'; }
+    public function render(): string
+    {
+        return '<div></div>';
+    }
 }
 
 class SlowFormComponent extends Component
@@ -175,7 +180,10 @@ class SlowFormComponent extends Component
         $this->resetHoneypot();
     }
 
-    public function render(): string { return '<div></div>'; }
+    public function render(): string
+    {
+        return '<div></div>';
+    }
 }
 
 class LongTokenComponent extends Component
@@ -193,7 +201,10 @@ class LongTokenComponent extends Component
         $this->resetHoneypot();
     }
 
-    public function render(): string { return '<div></div>'; }
+    public function render(): string
+    {
+        return '<div></div>';
+    }
 }
 
 class ShortTokenMinComponent extends Component
@@ -211,7 +222,10 @@ class ShortTokenMinComponent extends Component
         $this->resetHoneypot();
     }
 
-    public function render(): string { return '<div></div>'; }
+    public function render(): string
+    {
+        return '<div></div>';
+    }
 }
 
 class RandomizeFieldComponent extends Component
@@ -229,5 +243,8 @@ class RandomizeFieldComponent extends Component
         $this->resetHoneypot();
     }
 
-    public function render(): string { return '<div></div>'; }
+    public function render(): string
+    {
+        return '<div></div>';
+    }
 }

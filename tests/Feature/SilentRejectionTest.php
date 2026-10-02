@@ -49,8 +49,7 @@ test('a caught submission looks successful without errors or real work', functio
         ->assertSet('submissions', 0);
 
     Event::assertDispatchedTimes(HoneypotDetected::class, 1);
-    Event::assertDispatched(HoneypotDetected::class, fn ($event) =>
-        $event->reason === $reason
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === $reason
         && $event->fieldName === 'hp_website'
         && $event->component === SilentRejectionComponent::class
     );
@@ -108,7 +107,7 @@ test('a caught token does not affect another form instance', function () {
 
 test('an expired form shows the normal error instead of a fake success', function (string $responder) {
     Event::fake([HoneypotDetected::class]);
-    app()->bind(SpamResponder::class, fn () => new $responder());
+    app()->bind(SpamResponder::class, fn () => new $responder);
 
     $component = Livewire::test(SilentRejectionComponent::class);
     $this->travel(61)->minutes();
@@ -163,7 +162,7 @@ test('a clean check clears earlier honeypot errors', function () {
 });
 
 test('configured responders are never called by the silent API', function (string $responder) {
-    app()->bind(SpamResponder::class, fn () => new $responder());
+    app()->bind(SpamResponder::class, fn () => new $responder);
 
     $component = Livewire::test(SilentRejectionComponent::class);
     $component->set('hp_website', 'spam')
@@ -201,8 +200,7 @@ test('custom bait bindings can be checked silently', function () {
         ->assertSet('success', true)
         ->assertSet('submissions', 0);
 
-    Event::assertDispatched(HoneypotDetected::class, fn ($event) =>
-        $event->reason === 'honeypot_filled' && $event->fieldName === 'contact.trap'
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'honeypot_filled' && $event->fieldName === 'contact.trap'
     );
 });
 
@@ -361,6 +359,7 @@ class SilentRejectionComponent extends Component
     use HasHoneypot;
 
     public bool $success = false;
+
     public int $submissions = 0;
 
     public function submit(?string $scenario = null): void
@@ -402,7 +401,9 @@ class SilentRejectionCustomBaitComponent extends Component
     use HasHoneypot;
 
     public array $contact = ['trap' => ''];
+
     public bool $success = false;
+
     public int $submissions = 0;
 
     public function submit(): void

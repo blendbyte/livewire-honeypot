@@ -13,18 +13,18 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 // ---------------------------------------------------------------------------
 
 test('ValidationExceptionResponder implements SpamResponder', function () {
-    expect(new ValidationExceptionResponder())->toBeInstanceOf(SpamResponder::class);
+    expect(new ValidationExceptionResponder)->toBeInstanceOf(SpamResponder::class);
 });
 
 test('ValidationExceptionResponder throws ValidationException with field error', function () {
-    $responder = new ValidationExceptionResponder();
+    $responder = new ValidationExceptionResponder;
 
     expect(fn () => $responder->respond('hp_website', 'Spam detected.'))
         ->toThrow(ValidationException::class);
 });
 
 test('ValidationExceptionResponder sets the correct field and message', function () {
-    $responder = new ValidationExceptionResponder();
+    $responder = new ValidationExceptionResponder;
 
     try {
         $responder->respond('hp_website', 'Spam detected.');
@@ -39,18 +39,18 @@ test('ValidationExceptionResponder sets the correct field and message', function
 // ---------------------------------------------------------------------------
 
 test('AbortResponder implements SpamResponder', function () {
-    expect(new AbortResponder())->toBeInstanceOf(SpamResponder::class);
+    expect(new AbortResponder)->toBeInstanceOf(SpamResponder::class);
 });
 
 test('AbortResponder throws a 403 HttpException', function () {
-    $responder = new AbortResponder();
+    $responder = new AbortResponder;
 
     expect(fn () => $responder->respond('hp_website', 'Forbidden.'))
         ->toThrow(HttpException::class);
 });
 
 test('AbortResponder uses 403 status code', function () {
-    $responder = new AbortResponder();
+    $responder = new AbortResponder;
 
     try {
         $responder->respond('hp_website', 'Forbidden.');
@@ -64,11 +64,11 @@ test('AbortResponder uses 403 status code', function () {
 // ---------------------------------------------------------------------------
 
 test('RedirectResponder implements SpamResponder', function () {
-    expect(new RedirectResponder())->toBeInstanceOf(SpamResponder::class);
+    expect(new RedirectResponder)->toBeInstanceOf(SpamResponder::class);
 });
 
 test('RedirectResponder throws HttpResponseException', function () {
-    $responder = new RedirectResponder();
+    $responder = new RedirectResponder;
 
     expect(fn () => $responder->respond('hp_website', 'Spam.'))
         ->toThrow(HttpResponseException::class);

@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
-    $this->service   = new HoneypotService();
+    $this->service = new HoneypotService;
     $this->fieldName = config('livewire-honeypot.field_name', 'hp_website');
 });
 
@@ -50,13 +50,14 @@ test('it dispatches HoneypotDetected when honeypot field is filled', function ()
 
     $data = [
         $this->fieldName => 'spam content',
-        'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     try {
         $this->service->validate($data);
-    } catch (ValidationException) {}
+    } catch (ValidationException) {
+    }
 
     Event::assertDispatched(HoneypotDetected::class, function (HoneypotDetected $event) {
         return $event->reason === 'honeypot_filled'
@@ -69,13 +70,14 @@ test('it dispatches HoneypotDetected when submitted too quickly', function () {
 
     $data = [
         $this->fieldName => '',
-        'hp_started_at'  => now()->getTimestamp(),
-        'hp_token'       => app(HoneypotService::class)->token(now()->getTimestamp()),
+        'hp_started_at' => now()->getTimestamp(),
+        'hp_token' => app(HoneypotService::class)->token(now()->getTimestamp()),
     ];
 
     try {
         $this->service->validate($data);
-    } catch (ValidationException) {}
+    } catch (ValidationException) {
+    }
 
     Event::assertDispatched(HoneypotDetected::class, function (HoneypotDetected $event) {
         return $event->reason === 'submitted_too_quickly';
@@ -87,13 +89,14 @@ test('it dispatches HoneypotDetected when form data is invalid', function () {
 
     $data = [
         $this->fieldName => '',
-        'hp_started_at'  => 0,
-        'hp_token'       => app(HoneypotService::class)->token(0),
+        'hp_started_at' => 0,
+        'hp_token' => app(HoneypotService::class)->token(0),
     ];
 
     try {
         $this->service->validate($data);
-    } catch (ValidationException) {}
+    } catch (ValidationException) {
+    }
 
     Event::assertDispatched(HoneypotDetected::class, function (HoneypotDetected $event) {
         return $event->reason === 'invalid_form_data';
@@ -105,8 +108,8 @@ test('it does not dispatch HoneypotDetected on a valid submission', function () 
 
     $data = [
         $this->fieldName => '',
-        'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     $this->service->validate($data);
@@ -119,8 +122,8 @@ test('it still throws ValidationException after dispatching the event', function
 
     $data = [
         $this->fieldName => 'spam',
-        'hp_started_at'  => now()->subSeconds(10)->getTimestamp(),
-        'hp_token'       => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
+        'hp_started_at' => now()->subSeconds(10)->getTimestamp(),
+        'hp_token' => app(HoneypotService::class)->token(now()->subSeconds(10)->getTimestamp()),
     ];
 
     expect(fn () => $this->service->validate($data))

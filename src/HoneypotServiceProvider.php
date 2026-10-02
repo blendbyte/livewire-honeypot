@@ -2,6 +2,7 @@
 
 namespace Blendbyte\LivewireHoneypot;
 
+use Blendbyte\LivewireHoneypot\Contracts\SpamResponder;
 use Blendbyte\LivewireHoneypot\Events\HoneypotDetected;
 use Blendbyte\LivewireHoneypot\Exceptions\HoneypotRedirectException;
 use Illuminate\Support\Facades\Blade;
@@ -20,12 +21,12 @@ class HoneypotServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(
-            __DIR__ . '/../config/livewire-honeypot.php',
+            __DIR__.'/../config/livewire-honeypot.php',
             'livewire-honeypot'
         );
 
         $this->app->bind(
-            \Blendbyte\LivewireHoneypot\Contracts\SpamResponder::class,
+            SpamResponder::class,
             static fn () => app(HoneypotConfig::get('spam_responder'))
         );
     }
@@ -40,25 +41,25 @@ class HoneypotServiceProvider extends ServiceProvider
             }
         });
 
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'livewire-honeypot');
-        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'livewire-honeypot');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'livewire-honeypot');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'livewire-honeypot');
 
         // Register <x-honeypot />
         Blade::component('livewire-honeypot::components.honeypot', 'honeypot');
 
         // Allow publishing the views
         $this->publishes([
-            __DIR__ . '/../resources/views' => resource_path('views/vendor/livewire-honeypot'),
+            __DIR__.'/../resources/views' => resource_path('views/vendor/livewire-honeypot'),
         ], 'livewire-honeypot-views');
 
         // Allow publishing the translations
         $this->publishes([
-            __DIR__ . '/../resources/lang' => lang_path('vendor/livewire-honeypot'),
+            __DIR__.'/../resources/lang' => lang_path('vendor/livewire-honeypot'),
         ], 'livewire-honeypot-translations');
 
         // Allow publishing the config
         $this->publishes([
-            __DIR__ . '/../config/livewire-honeypot.php' => config_path('livewire-honeypot.php'),
+            __DIR__.'/../config/livewire-honeypot.php' => config_path('livewire-honeypot.php'),
         ], 'livewire-honeypot-config');
 
         // Guard against misconfigured token lengths and fill times
@@ -71,15 +72,15 @@ class HoneypotServiceProvider extends ServiceProvider
         // Register structured logging listener when enabled
         if (HoneypotConfig::get('logging.enabled')) {
             Event::listen(HoneypotDetected::class, static function (HoneypotDetected $event): void {
-                $level   = (string) HoneypotConfig::get('logging.level');
+                $level = (string) HoneypotConfig::get('logging.level');
                 $channel = HoneypotConfig::get('logging.channel');
 
                 $context = [
-                    'reason'     => $event->reason,
+                    'reason' => $event->reason,
                     'field_name' => $event->fieldName,
-                    'ip'         => $event->ipAddress,
+                    'ip' => $event->ipAddress,
                     'user_agent' => $event->userAgent,
-                    'component'  => $event->component,
+                    'component' => $event->component,
                 ];
 
                 // Kept in the context, never the message, so the log formatter escapes it.

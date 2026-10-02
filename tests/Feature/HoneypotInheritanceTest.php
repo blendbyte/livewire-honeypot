@@ -48,6 +48,7 @@ class LegacyHoneypotBase extends Component
     use HasHoneypot;
 
     public string $trap = '';
+
     public bool $submitted = false;
 
     public function submit(?int $minimumSeconds = null): void
@@ -71,6 +72,7 @@ class LegacyHoneypotBase extends Component
 class LegacyHoneypotChild extends LegacyHoneypotBase
 {
     public int $validationCount = 0;
+
     public int $resetCount = 0;
 
     protected function validateHoneypot(?int $minimumSeconds = null): void

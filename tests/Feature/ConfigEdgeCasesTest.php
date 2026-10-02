@@ -6,6 +6,7 @@ use Blendbyte\LivewireHoneypot\Responders\RedirectResponder;
 use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 use Illuminate\Support\Facades\Event;
+use Illuminate\View\ViewException;
 use Livewire\Component;
 use Livewire\Livewire;
 
@@ -22,7 +23,7 @@ test('the default view uses the component field override for binding and errors'
     $component = Livewire::test(EdgeCaseHoneypotComponent::class);
     $component->assertSeeHtml('wire:model="trap"')
         ->assertDontSeeHtml('wire:model="global_trap"');
-    $component->assertSeeHtml('name="' . $component->hp_field_name . '"');
+    $component->assertSeeHtml('name="'.$component->hp_field_name.'"');
 
     $component->set('trap', 'spam')->call('submit')
         ->assertHasErrors(['trap' => 'size'])
@@ -75,7 +76,7 @@ test('invalid effective token lengths fail during component initialization', fun
     EdgeCaseHoneypotComponent::$settings += ['token_length' => $length];
     // Livewire wraps initialization exceptions in a view exception.
     expect(fn () => Livewire::test(EdgeCaseHoneypotComponent::class))
-        ->toThrow(\Illuminate\View\ViewException::class, 'token_length');
+        ->toThrow(ViewException::class, 'token_length');
 })->with(['zero' => [0], 'negative' => [-1]]);
 
 test('valid effective token lengths work on mount and reset', function (int $length) {
@@ -103,11 +104,17 @@ class EdgeCaseHoneypotComponent extends Component
     use HasHoneypot;
 
     public static array $settings = [];
+
     public static bool $processed = false;
+
     public string $trap = '';
+
     public array $contact = ['trap' => ''];
 
-    protected function honeypotConfig(): array { return self::$settings; }
+    protected function honeypotConfig(): array
+    {
+        return self::$settings;
+    }
 
     public function submit(): void
     {
@@ -116,7 +123,10 @@ class EdgeCaseHoneypotComponent extends Component
         $this->resetHoneypot();
     }
 
-    public function clearHoneypot(): void { $this->resetHoneypot(); }
+    public function clearHoneypot(): void
+    {
+        $this->resetHoneypot();
+    }
 
     public function render(): string
     {

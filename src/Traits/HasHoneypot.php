@@ -16,11 +16,12 @@ use Livewire\Attributes\Locked;
 use Livewire\Component;
 
 /**
- * @phpstan-require-extends \Livewire\Component
+ * @phpstan-require-extends Component
  */
 trait HasHoneypot
 {
     public string $hp_website = '';
+
     public string $hp_field_name = '';
 
     #[Locked]
@@ -78,8 +79,8 @@ trait HasHoneypot
 
         if ($fieldName !== 'hp_website' && ! property_exists($this, $fieldName)) {
             throw new \LogicException(
-                'LivewireHoneypot: The configured field_name "' . $fieldName . '" is not declared as a public ' .
-                'property on ' . static::class . '. Add `public string $' . $fieldName . " = '';` to your component."
+                'LivewireHoneypot: The configured field_name "'.$fieldName.'" is not declared as a public '.
+                'property on '.static::class.'. Add `public string $'.$fieldName." = '';` to your component."
             );
         }
 
@@ -210,7 +211,7 @@ trait HasHoneypot
     {
         if ($this->hp_started_at === 0 && ! ($this instanceof Component)) {
             throw new \LogicException(
-                'LivewireHoneypot: Use the HasHoneypot trait on the Livewire component, not on a form object. ' .
+                'LivewireHoneypot: Use the HasHoneypot trait on the Livewire component, not on a form object. '.
                 'For a bait field on a form object, call validateHoneypotForModel(\'form.trap\') on the component.'
             );
         }
