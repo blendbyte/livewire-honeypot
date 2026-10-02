@@ -1,6 +1,28 @@
-# Running the test suites
+# Testing
 
-## Testing silent rejection in your app
+## Testing your forms
+
+Bypass honeypot checks in tests that focus on the rest of your form:
+
+```php
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
+
+beforeEach(fn () => HoneypotService::fake());
+```
+
+Fake mode ends with each test's application, so it never leaks into other tests. Call `HoneypotService::resetFake()` to turn it off within a test.
+
+To test the waiting period itself, mount the component and advance time before submitting:
+
+```php
+$component = Livewire::test(ContactForm::class);
+$this->travel(5)->seconds();
+$component->call('submit');
+```
+
+The timestamp and token are locked properties, so use time travel instead of setting them through Livewire. To select the bait input in browser tests, use its `wire:model` attribute rather than its generated name.
+
+## Testing silent rejection
 
 Submissions caught by `isHoneypotCaught()` have no errors, so assert on your fake-success state and on the work that should not run. Submitting immediately after mounting triggers the waiting-time check. Use `travel()` to cover a retry:
 

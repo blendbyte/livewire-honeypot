@@ -32,7 +32,27 @@ Honeypot checks use a separate validator, leaving application `withValidator()` 
 
 ## Silent rejection
 
-`isHoneypotCaught()`, `isHoneypotCaughtForModel()`, and `HoneypotService::isCaught()` return a boolean instead of responding, so the component or controller decides how to answer, typically with a fake success. They ignore `spam_responder` and never add validation errors.
+A validation error tells a bot it was caught, and it can wait and resubmit. To answer bots with a fake success instead, check `isHoneypotCaught()` and return early:
+
+```php
+public function submit(): void
+{
+    if ($this->isHoneypotCaught()) {
+        $this->success = true; // looks like success, nothing is saved or sent
+        return;
+    }
+
+    $this->validate(['email' => 'required|email']);
+
+    // Process the submission here.
+
+    $this->success = true;
+    $this->reset('email');
+    $this->resetHoneypot();
+}
+```
+
+`isHoneypotCaught()`, `isHoneypotCaughtForModel('contact.trap')` for custom bindings, and `HoneypotService::isCaught()` for plain forms return a boolean instead of responding, so the component or controller decides how to answer. They ignore `spam_responder` and never add validation errors. Do not call `resetHoneypot()` for a caught submission: a fresh token would let the bot start over.
 
 Caught tokens are remembered in the cache until their form expires (`maximum_fill_seconds`), so they outlive the form they belong to. With expiry disabled they are remembered for one day, so bots cannot fill the cache with entries that never expire. Later submissions with the same token are caught whatever their fields contain. Set `HONEYPOT_CAUGHT_CACHE_STORE` (`caught_cache_store`) to use a specific cache store; `null` uses the default store. If the store is unavailable or not defined, the error is reported once per submission through Laravel's exception handler and each submission is checked on its own, so forms keep working.
 
