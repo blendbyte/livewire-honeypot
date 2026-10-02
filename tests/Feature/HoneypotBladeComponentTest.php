@@ -12,27 +12,27 @@ test('it renders without error', function () {
     expect($html)->toBeString()->not->toBeEmpty();
 });
 
-test('it renders the hp_website text input', function () {
-    $html = Blade::render('<x-honeypot />');
+test('it renders the bait text input', function () {
+    config(['livewire-honeypot.randomize_field_name' => false]);
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     expect($html)->toContain('name="hp_website"')
         ->toContain('type="text"');
 });
 
 test('it does not render a start time input', function () {
-    $html = Blade::render('<x-honeypot />');
-
-    expect($html)->not->toContain('name="hp_started_at"');
+    expect(renderInHoneypotComponent('<x-honeypot />'))->not->toContain('name="hp_started_at"');
+    expect(Blade::render('<x-honeypot />'))->not->toContain('name="hp_started_at"');
 });
 
-test('it does not render a token input', function () {
-    $html = Blade::render('<x-honeypot />');
+test('it does not render a token input in a Livewire component', function () {
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     expect($html)->not->toContain('name="hp_token"');
 });
 
 test('it binds hp_website with wire:model.lazy by default', function () {
-    $html = Blade::render('<x-honeypot />');
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     expect($html)->toContain('wire:model.lazy="hp_website"');
 });
@@ -113,19 +113,20 @@ test('it sets autocomplete off on the text input', function () {
 });
 
 test('it accepts a custom field-name prop for the name attribute', function () {
-    $html = Blade::render('<x-honeypot :field-name="$name" />', ['name' => 'hp_custom123']);
+    $html = renderInHoneypotComponent('<x-honeypot :field-name="$name" />', ['name' => 'hp_custom123']);
 
     expect($html)->toContain('name="hp_custom123"');
 });
 
 test('wire:model.lazy still targets the static field_name when a custom field-name prop is passed', function () {
-    $html = Blade::render('<x-honeypot :field-name="$name" />', ['name' => 'hp_random99']);
+    $html = renderInHoneypotComponent('<x-honeypot :field-name="$name" />', ['name' => 'hp_random99']);
 
     expect($html)->toContain('wire:model.lazy="hp_website"');
 });
 
-test('name attribute falls back to config field_name when no prop is passed', function () {
-    $html = Blade::render('<x-honeypot />');
+test('name attribute falls back to config field_name when randomization is disabled', function () {
+    config(['livewire-honeypot.randomize_field_name' => false]);
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     expect($html)->toContain('name="hp_website"');
 });

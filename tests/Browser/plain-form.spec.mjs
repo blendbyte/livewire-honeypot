@@ -1,0 +1,29 @@
+import { test, expect } from '@playwright/test';
+
+test('a plain form fills the JS marker without Livewire and submits', async ({ page }) => {
+    const errors = [];
+    page.on('pageerror', error => errors.push(error.message));
+    page.on('console', message => message.type() === 'error' && errors.push(message.text()));
+
+    await page.goto('/plain');
+    await expect(page.locator('input[name="hp_js"]')).toHaveValue('1');
+    await expect(page.locator('input[type="text"]')).toHaveAttribute('name', /^[a-z]+_[0-9a-f]{4}$/);
+    await page.getByLabel('Email').fill('visitor@example.com');
+    await page.getByRole('button', { name: 'Submit' }).click();
+
+    await expect(page.locator('.accepted')).toHaveText('Accepted');
+    await expect(page.locator('.hp-error')).toHaveCount(0);
+    expect(errors).toEqual([]);
+});
+
+test('a filled plain bait is rejected with a visible error', async ({ page }) => {
+    await page.goto('/plain');
+    const bait = page.locator('input[type="text"]');
+    // Make the visually hidden input reachable for actual keyboard input.
+    await bait.evaluate(input => input.closest('[aria-hidden="true"]').removeAttribute('class'));
+    await bait.fill('spam');
+    await page.getByRole('button', { name: 'Submit' }).click();
+
+    await expect(page.locator('.hp-error')).toHaveText('Spam detected.');
+    await expect(page.locator('.accepted')).toHaveCount(0);
+});

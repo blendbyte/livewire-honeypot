@@ -8,7 +8,7 @@ The component uses Laravel Vite's CSP nonce automatically, or accepts an explici
 <x-honeypot :nonce="$cspNonce" />
 ```
 
-Use the same nonce in your response's `style-src` policy, or `style-src-elem` when specified. The prop covers the honeypot's inline stylesheet only. Configure Livewire's own scripts and styles as well, and enable `livewire.csp_safe` when your policy prohibits `unsafe-eval`.
+Use the same nonce in your response's `style-src` policy, or `style-src-elem` when specified. In a plain form with `require_js_verification`, the nonce also covers the small inline script that fills `hp_js`, so allow it in `script-src` too. The prop covers only the honeypot's own inline stylesheet and script. Configure Livewire's own scripts and styles as well, and enable `livewire.csp_safe` when your policy prohibits `unsafe-eval`.
 
 The wrapper is hidden like screen-reader-only text, under a class derived from `APP_KEY` (such as `f3a91c07e`) rather than a recognizable honeypot name. For external stylesheets only, publish the view, give the wrapper a class of your own, move its CSS into your application stylesheet, and remove the inline style block.
 

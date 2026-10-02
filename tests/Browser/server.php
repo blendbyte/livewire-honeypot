@@ -5,12 +5,15 @@ require dirname(__DIR__, 2) . '/vendor/autoload.php';
 
 use Blendbyte\LivewireHoneypot\Tests\TestCase;
 use Blendbyte\LivewireHoneypot\Responders\RedirectResponder;
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 use Illuminate\Contracts\Http\Kernel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\ViewErrorBag;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\Livewire;
@@ -103,6 +106,53 @@ class ConfiguredFieldBrowserComponent extends JsVerificationBrowserComponent
 Livewire::component('browser-honeypot', JsVerificationBrowserComponent::class);
 Livewire::component('configured-honeypot', ConfiguredFieldBrowserComponent::class);
 Vite::useCspNonce('browser-test-nonce');
+
+function browserCspPolicy(): string
+{
+    $policy = "default-src 'self'; script-src 'self' 'nonce-browser-test-nonce'";
+    if (! config('livewire.csp_safe')) {
+        $policy .= " 'unsafe-eval'";
+    }
+
+    return $policy . "; style-src 'self' 'nonce-browser-test-nonce'";
+}
+
+// A plain form posting to a controller, with JS verification enabled and no Livewire or Alpine on the page.
+// The session driver does not persist between requests here, so the POST renders the outcome directly.
+function plainBrowserPage(bool $accepted = false): Illuminate\Http\Response
+{
+    config(['livewire-honeypot.require_js_verification' => true]);
+    $html = Blade::render(<<<'BLADE'
+<!doctype html>
+<html><body>
+<form method="POST" action="/plain">
+    @csrf
+    <x-honeypot />
+    <label>Email <input type="email" name="email"></label>
+    <button type="submit">Submit</button>
+</form>
+@if($accepted) <p class="accepted">Accepted</p> @endif
+</body></html>
+BLADE, ['accepted' => $accepted]);
+
+    return response($html)->header('Content-Security-Policy', browserCspPolicy());
+}
+
+Route::middleware('web')->get('/plain', fn () => plainBrowserPage());
+Route::middleware('web')->post('/plain', function (Request $request, HoneypotService $honeypot) {
+    config(['livewire-honeypot.require_js_verification' => true]);
+
+    try {
+        $honeypot->validate($request->all());
+    } catch (ValidationException $e) {
+        view()->share('errors', (new ViewErrorBag())->put('default', $e->validator->errors()));
+
+        return plainBrowserPage();
+    }
+
+    return plainBrowserPage(accepted: true);
+});
+
 Route::middleware('web')->get('/{mode?}', function (string $mode = 'default') {
     $html = Blade::render(<<<'BLADE'
 <!doctype html>
@@ -122,13 +172,7 @@ BLADE, [
     'configured' => $mode === 'configured',
 ]);
 
-    $policy = "default-src 'self'; script-src 'self' 'nonce-browser-test-nonce'";
-    if (! config('livewire.csp_safe')) {
-        $policy .= " 'unsafe-eval'";
-    }
-    $policy .= "; style-src 'self' 'nonce-browser-test-nonce'";
-
-    return response($html)->header('Content-Security-Policy', $policy);
+    return response($html)->header('Content-Security-Policy', browserCspPolicy());
 });
 
 $kernel = app(Kernel::class);

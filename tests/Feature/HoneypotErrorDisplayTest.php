@@ -13,7 +13,7 @@ function renderHoneypotWithErrors(array $messages, string $template = '<x-honeyp
 {
     view()->share('errors', (new ViewErrorBag())->put('default', new MessageBag($messages)));
 
-    return Blade::render($template);
+    return renderInHoneypotComponent($template);
 }
 
 test('honeypot errors are visible outside the hidden wrapper', function () {

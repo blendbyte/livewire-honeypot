@@ -160,7 +160,7 @@ test('JS input identity changes after a reset but remains stable on ordinary ren
 test('blade component renders hp_js input when js verification is enabled', function () {
     config(['livewire-honeypot.require_js_verification' => true]);
 
-    $html = Blade::render('<x-honeypot />');
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     expect($html)->toContain('name="hp_js"');
 });
@@ -168,7 +168,7 @@ test('blade component renders hp_js input when js verification is enabled', func
 test('blade component does not render hp_js input when js verification is disabled', function () {
     config(['livewire-honeypot.require_js_verification' => false]);
 
-    $html = Blade::render('<x-honeypot />');
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     expect($html)->not->toContain('name="hp_js"');
 });
@@ -176,7 +176,7 @@ test('blade component does not render hp_js input when js verification is disabl
 test('blade component hp_js field has x-data and x-init Alpine directives', function () {
     config(['livewire-honeypot.require_js_verification' => true]);
 
-    $html = Blade::render('<x-honeypot />');
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     expect($html)->toContain('x-data')
         ->toContain('x-init');
@@ -185,7 +185,7 @@ test('blade component hp_js field has x-data and x-init Alpine directives', func
 test('blade component leaves the verification value for JavaScript to populate', function () {
     config(['livewire-honeypot.require_js_verification' => true]);
 
-    $html = Blade::render('<x-honeypot />');
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     $document = new DOMDocument();
     $document->loadHTML($html);
@@ -198,7 +198,7 @@ test('blade component leaves the verification value for JavaScript to populate',
 test('blade component hp_js field dispatches input event', function () {
     config(['livewire-honeypot.require_js_verification' => true]);
 
-    $html = Blade::render('<x-honeypot />');
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     expect($html)->toContain("\$dispatch('input', '1')");
 });
@@ -206,7 +206,7 @@ test('blade component hp_js field dispatches input event', function () {
 test('blade component hp_js field has wire:model binding', function () {
     config(['livewire-honeypot.require_js_verification' => true]);
 
-    $html = Blade::render('<x-honeypot />');
+    $html = renderInHoneypotComponent('<x-honeypot />');
 
     expect($html)->toContain('wire:model="hp_js"');
 });

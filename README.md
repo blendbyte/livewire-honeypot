@@ -167,7 +167,7 @@ For the package's own PHP and browser checks, see [running the test suites](docs
 
 ## More options
 
-- [Plain HTML forms](docs/plain-forms.md): signed tokens and controller validation.
+- [Plain HTML forms](docs/plain-forms.md): `<x-honeypot />` in forms posting to a controller.
 - [Advanced options](docs/advanced.md): CSP, responders, silent rejection, events, translations, and JS verification.
 - [Upgrading existing integrations](docs/upgrading.md): published views, custom bindings, and signed tokens.
 

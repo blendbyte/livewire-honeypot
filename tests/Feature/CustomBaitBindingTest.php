@@ -11,21 +11,21 @@ use Livewire\Livewire;
 beforeEach(fn () => $this->freezeTime());
 
 test('the Blade component preserves custom binding modifiers', function (string $directive) {
-    $html = Blade::render('<x-honeypot ' . $directive . '="contact.trap" />');
+    $html = renderInHoneypotComponent('<x-honeypot ' . $directive . '="contact.trap" />');
 
     expect($html)->toContain($directive . '="contact.trap"')
         ->not->toContain('wire:model.lazy="hp_website"');
 })->with(['wire:model', 'wire:model.blur', 'wire:model.live.debounce.500ms']);
 
 test('a randomized HTML name does not replace a custom model binding', function () {
-    $html = Blade::render('<x-honeypot field-name="hp_random" wire:model="contact.trap" />');
+    $html = renderInHoneypotComponent('<x-honeypot field-name="hp_random" wire:model="contact.trap" />');
 
     expect($html)->toContain('name="hp_random"')
         ->toContain('wire:model="contact.trap"');
 });
 
 test('binding values are escaped as HTML attributes', function () {
-    $html = Blade::render('<x-honeypot :wire:model="$model" />', [
+    $html = renderInHoneypotComponent('<x-honeypot :wire:model="$model" />', [
         'model' => 'trap" onfocus="alert(1)',
     ]);
 
@@ -35,7 +35,7 @@ test('binding values are escaped as HTML attributes', function () {
 
 test('a custom bait binding keeps the JS verification input bound independently', function () {
     config(['livewire-honeypot.require_js_verification' => true]);
-    $html = Blade::render('<x-honeypot wire:model.blur="contact.trap" />');
+    $html = renderInHoneypotComponent('<x-honeypot wire:model.blur="contact.trap" />');
 
     expect($html)->toContain('wire:model.blur="contact.trap"')
         ->toContain('wire:model="hp_js"');
