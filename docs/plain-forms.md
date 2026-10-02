@@ -34,7 +34,7 @@ The bait gets a name derived from the token, such as `referral_3f9a`, that chang
 
 This also works for a plain form inside a Livewire component that does not use `HasHoneypot`, such as a newsletter form posting to a controller. Inside a component with the trait, `<x-honeypot />` always renders the Livewire version.
 
-To answer bots with a fake success instead of an error, use `isCaught()` with the same data. It never calls the configured responder, and it remembers caught tokens for an hour so a retry with the same token is caught too. An expired form still throws the normal validation error, so the visitor sees it and can reload. See [silent rejection](advanced.md#silent-rejection).
+To answer bots with a fake success instead of an error, use `isCaught()` with the same data. It never calls the configured responder, and it remembers caught tokens until their form expires so a retry with the same token is caught too. An expired form still throws the normal validation error, so the visitor sees it and can reload. See [silent rejection](advanced.md#silent-rejection).
 
 ```php
 if ($honeypot->isCaught($request->all())) {
@@ -44,7 +44,7 @@ if ($honeypot->isCaught($request->all())) {
 
 `validate($data, minimumSeconds: 2)` overrides the minimum waiting time. Empty bait values converted to `null` by Laravel's middleware are accepted; a missing bait field is rejected.
 
-Tokens require `APP_KEY`, expire after one hour, and can be reused within that period. Keep CSRF protection and rate limiting. When rotating application keys, retain previous keys in `APP_PREVIOUS_KEYS` if open forms should continue working.
+Tokens require `APP_KEY`, expire after `maximum_fill_seconds` (one hour by default), and can be reused within that period. Disabling expiry with `0` lets a token scraped from the page be replayed indefinitely. Keep CSRF protection and rate limiting. When rotating application keys, retain previous keys in `APP_PREVIOUS_KEYS` if open forms should continue working.
 
 ## JavaScript verification
 

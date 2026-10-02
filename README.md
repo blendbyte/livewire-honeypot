@@ -64,7 +64,7 @@ In `resources/views/livewire/contact-form.blade.php`:
 </form>
 ```
 
-By default, the hidden bait must stay empty, submissions must wait **5 seconds**, and forms expire after **1 hour**. Honeypot errors appear beside the component; style `.hp-error` to match your form.
+By default, the hidden bait must stay empty, submissions must wait **5 seconds**, and forms expire after **1 hour** (`HONEYPOT_MAXIMUM_FILL_SECONDS`, `0` disables expiry). Honeypot errors appear beside the component; style `.hp-error` to match your form.
 
 Keep the trait on the Livewire component, including when using a Livewire `Form` object. Call `resetHoneypot()` after a successful submission to refresh the form's protection.
 
@@ -92,7 +92,7 @@ public function submit(): void
 
 `isHoneypotCaught()` never calls the configured responder or adds errors. Once a form's token is caught, every later submission from that form is caught too, even after waiting or clearing the bait field. Do not call `resetHoneypot()` for a caught submission: a fresh token would let the bot start over. For custom bindings, use `isHoneypotCaughtForModel('contact.trap')`; plain forms can use `HoneypotService::isCaught()`.
 
-Real users can be caught too, for example by autofilling and submitting faster than the minimum time, and they will see the same fake success. Stick with `validateHoneypot()` when a visible error is safer than losing a message silently. Forms open for more than an hour are not treated as spam: they still show a validation error asking the visitor to reload the page and send again.
+Real users can be caught too, for example by autofilling and submitting faster than the minimum time, and they will see the same fake success. Stick with `validateHoneypot()` when a visible error is safer than losing a message silently. Expired forms are not treated as spam: they still show a validation error asking the visitor to reload the page and send again.
 
 ## Configuration
 
@@ -103,7 +103,7 @@ HONEYPOT_MINIMUM_FILL_SECONDS=3
 HONEYPOT_LOGGING=true
 ```
 
-Set the minimum to `0` to disable the waiting period. For all options, publish the [configuration file](config/livewire-honeypot.php):
+Set the minimum to `0` to disable the waiting period. The maximum form age must be greater than the minimum, or `0` to disable expiry. For all options, publish the [configuration file](config/livewire-honeypot.php):
 
 ```bash
 php artisan vendor:publish --tag=livewire-honeypot-config

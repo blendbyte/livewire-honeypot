@@ -214,7 +214,7 @@ class HoneypotService
     /**
      * Return true when the submission is spam, without calling the responder or adding errors.
      * Once a signed token is caught, every later submission with it is caught too.
-     * A form older than one hour still throws the normal validation error, so a visitor can reload.
+     * An expired form still throws the normal validation error, so a visitor can reload.
      * Answer a caught submission yourself, typically with a fake success.
      */
     public function isCaught(array $data, ?int $minimumSeconds = null): bool
@@ -235,6 +235,7 @@ class HoneypotService
             $remember ? $token : null,
             fn (): ?HoneypotViolation => $this->detectViolation($data, $minimumSeconds, $startedAt),
             fn () => event(HoneypotDetected::fromRequest(HoneypotConfig::get('field_name'), 'previously_detected')),
+            (int) HoneypotConfig::get('maximum_fill_seconds'),
         );
     }
 
@@ -259,7 +260,7 @@ class HoneypotService
         try {
             validator($data, [
                 $fieldName => 'present|size:0',
-                'hp_started_at' => ['required', 'integer', 'min:' . ($now - 3600), 'max:' . $now],
+                'hp_started_at' => HoneypotConfig::startedAtRules($now, (int) HoneypotConfig::get('maximum_fill_seconds')),
                 'hp_token' => ['required', 'string', function ($attribute, $value, $fail) use ($startedAt): void {
                     if ($startedAt === null) {
                         $fail(__('livewire-honeypot::validation.invalid_form_data'));

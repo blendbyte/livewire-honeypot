@@ -50,7 +50,7 @@ final readonly class HoneypotViolation
     }
 
     /**
-     * True when the only problem is a form older than one hour, which is usually a real visitor.
+     * True when the only problem is an expired form, which is usually a real visitor.
      */
     public function isExpiredForm(): bool
     {

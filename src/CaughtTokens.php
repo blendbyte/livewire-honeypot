@@ -12,8 +12,11 @@ use Illuminate\Support\Facades\Cache;
  */
 final class CaughtTokens
 {
-    /** Matches the one-hour form expiry, so a remembered token outlives its form. */
-    public const int TTL_SECONDS = 3600;
+    /**
+     * Without form expiry a caught token could be replayed forever, but remembering it forever
+     * would let bots grow the cache without limit, so it is kept for one day.
+     */
+    public const int TTL_WITHOUT_EXPIRY_SECONDS = 86400;
 
     /** Shorter random values could collide between visitors, so they are never remembered. */
     public const int MIN_REMEMBERED_LENGTH = 8;
@@ -25,8 +28,9 @@ final class CaughtTokens
      * @param  string|null  $token  The token to remember, or null when it must not be remembered
      * @param  callable(): ?HoneypotViolation  $detect
      * @param  callable(): void  $onRepeat  Called when the token was caught before
+     * @param  int  $maximumFormSeconds  The form expiry, so a remembered token outlives its form; 0 when disabled
      */
-    public static function check(?string $token, callable $detect, callable $onRepeat): bool
+    public static function check(?string $token, callable $detect, callable $onRepeat, int $maximumFormSeconds): bool
     {
         $cacheAvailable = true;
 
@@ -52,7 +56,7 @@ final class CaughtTokens
         }
 
         if ($token !== null && $cacheAvailable) {
-            self::remember($token);
+            self::remember($token, $maximumFormSeconds > 0 ? $maximumFormSeconds : self::TTL_WITHOUT_EXPIRY_SECONDS);
         }
 
         return true;
@@ -75,10 +79,10 @@ final class CaughtTokens
         }
     }
 
-    private static function remember(string $token): void
+    private static function remember(string $token, int $seconds): void
     {
         try {
-            self::store()->put(self::key($token), true, self::TTL_SECONDS);
+            self::store()->put(self::key($token), true, $seconds);
         } catch (\Throwable $e) {
             report($e);
         }

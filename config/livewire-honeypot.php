@@ -21,6 +21,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Maximum Fill Time (seconds)
+    |--------------------------------------------------------------------------
+    |
+    | Forms loaded longer ago than this are rejected with a message asking
+    | the visitor to reload, so an old token cannot be replayed forever.
+    | Applies to Livewire and plain forms, and must be greater than the
+    | minimum fill time. Default: one hour. Set to 0 to disable expiry.
+    |
+    */
+
+    'maximum_fill_seconds' => (int) env('HONEYPOT_MAXIMUM_FILL_SECONDS', $defaults['maximum_fill_seconds']),
+
+    /*
+    |--------------------------------------------------------------------------
     | Honeypot Field Name
     |--------------------------------------------------------------------------
     |
@@ -137,7 +151,8 @@ return [
     |--------------------------------------------------------------------------
     |
     | The cache store used by isHoneypotCaught() and isCaught() to remember
-    | form tokens that were already caught, for one hour. Leave null to use
+    | caught form tokens until their form expires, or for one day when expiry
+    | is disabled. Leave null to use
     | the default cache store. If the store is unavailable or not defined,
     | the error is reported and forms keep working without remembered tokens.
     |

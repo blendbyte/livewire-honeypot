@@ -35,7 +35,7 @@ trait HasHoneypot
      * Override this method in your component to customise honeypot settings
      * for that component without touching the global config.
      *
-     * Supported keys: minimum_fill_seconds, field_name, token_length,
+     * Supported keys: minimum_fill_seconds, maximum_fill_seconds, field_name, token_length,
      *                 token_min_length, randomize_field_name, require_js_verification
      *
      * Example:
@@ -93,6 +93,10 @@ trait HasHoneypot
     {
         $tokenLength = (int) $this->getHoneypotConfig('token_length');
         HoneypotConfig::validateTokenLengths($tokenLength, (int) $this->getHoneypotConfig('token_min_length'));
+        HoneypotConfig::validateFillSeconds(
+            (int) $this->getHoneypotConfig('minimum_fill_seconds'),
+            (int) $this->getHoneypotConfig('maximum_fill_seconds'),
+        );
 
         $fieldName = $this->getHoneypotFieldName();
         $this->$fieldName = '';
@@ -168,7 +172,7 @@ trait HasHoneypot
     /**
      * Return true when the submission is spam, without calling the responder or adding errors.
      * Once a form token is caught, every later submission with it is caught too.
-     * A form older than one hour still throws the normal validation error, so a visitor can reload.
+     * An expired form still throws the normal validation error, so a visitor can reload.
      *
      * Answer a caught submission yourself, typically with a fake success. Do not call
      * resetHoneypot() in that case: a fresh token would let the bot start over.
@@ -189,6 +193,7 @@ trait HasHoneypot
             $token,
             fn (): ?HoneypotViolation => $this->detectHoneypotViolation($model, $minimumSeconds),
             fn () => event(HoneypotDetected::fromRequest($model, 'previously_detected', static::class)),
+            (int) $this->getHoneypotConfig('maximum_fill_seconds'),
         );
 
         if (! $caught) {
@@ -235,7 +240,7 @@ trait HasHoneypot
             // Require presence & emptiness of the bait field, plus meta fields
             validator($data, [
                 $fieldName => 'present|size:0',
-                'hp_started_at' => ['required', 'integer', 'min:' . ($now - 3600), 'max:' . $now],
+                'hp_started_at' => HoneypotConfig::startedAtRules($now, (int) $this->getHoneypotConfig('maximum_fill_seconds')),
                 'hp_token' => "required|string|min:{$tokenMinLength}",
             ], [
                 "{$fieldName}.size" => __('livewire-honeypot::validation.spam_detected'),

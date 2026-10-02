@@ -12,6 +12,7 @@ use Illuminate\Support\ServiceProvider;
 test('it merges the package config', function () {
     // No package settings are injected by TestCase, so these come from the provider.
     expect(config('livewire-honeypot.minimum_fill_seconds'))->toBeInt();
+    expect(config('livewire-honeypot.maximum_fill_seconds'))->toBeInt();
     expect(config('livewire-honeypot.field_name'))->toBeString();
     expect(config('livewire-honeypot.token_min_length'))->toBeInt();
     expect(config('livewire-honeypot.token_length'))->toBeInt();
@@ -21,11 +22,12 @@ test('it merges the package config', function () {
     expect(config('livewire-honeypot.require_js_verification'))->toBeBool();
 });
 
-test('it registers all eight config keys', function () {
+test('it registers the main config keys', function () {
     $config = config('livewire-honeypot');
 
     expect($config)->toBeArray()
         ->toHaveKey('minimum_fill_seconds')
+        ->toHaveKey('maximum_fill_seconds')
         ->toHaveKey('field_name')
         ->toHaveKey('token_min_length')
         ->toHaveKey('token_length')
