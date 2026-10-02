@@ -44,7 +44,7 @@
                @elseif($modelAttributes->isNotEmpty())
                    {{ $modelAttributes }}
                @else
-                   wire:model.lazy="{{ $staticFieldName }}"
+                   wire:model="{{ $staticFieldName }}"
                @endif
                tabindex="-1"
                autocomplete="off"

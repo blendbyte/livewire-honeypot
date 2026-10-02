@@ -14,7 +14,7 @@ test('the Blade component preserves custom binding modifiers', function (string 
     $html = renderInHoneypotComponent('<x-honeypot ' . $directive . '="contact.trap" />');
 
     expect($html)->toContain($directive . '="contact.trap"')
-        ->not->toContain('wire:model.lazy="hp_website"');
+        ->not->toContain('wire:model="hp_website"');
 })->with(['wire:model', 'wire:model.blur', 'wire:model.live.debounce.500ms']);
 
 test('a randomized HTML name does not replace a custom model binding', function () {

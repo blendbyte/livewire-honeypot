@@ -16,7 +16,7 @@ test('missing package settings retain the service and view defaults', function (
     expect(explode('.', $data['hp_token'])[0])->toHaveLength(24);
     expect(app(SpamResponder::class))->toBeInstanceOf(ValidationExceptionResponder::class);
     expect(renderInHoneypotComponent('<x-honeypot />'))
-        ->toContain('wire:model.lazy="hp_website"')
+        ->toContain('wire:model="hp_website"')
         ->not->toContain('name="hp_js"');
 
     $this->travel(5)->seconds();
@@ -27,7 +27,7 @@ test('the same service and view pick up runtime configuration changes', function
     $service = new HoneypotService();
     $first = $service->generate();
     expect($first)->toHaveKey('hp_website');
-    expect(renderInHoneypotComponent('<x-honeypot />'))->toContain('wire:model.lazy="hp_website"');
+    expect(renderInHoneypotComponent('<x-honeypot />'))->toContain('wire:model="hp_website"');
 
     config([
         'livewire-honeypot.field_name' => 'trap',
@@ -40,7 +40,7 @@ test('the same service and view pick up runtime configuration changes', function
     expect($data)->toHaveKey('trap', '')->not->toHaveKey('hp_website');
     expect(explode('.', $data['hp_token'])[0])->toHaveLength(32);
     expect(renderInHoneypotComponent('<x-honeypot />'))
-        ->toContain('wire:model.lazy="trap"')
+        ->toContain('wire:model="trap"')
         ->toContain('name="hp_js"');
 
     $service->validate([...$data, 'hp_js' => '1']);

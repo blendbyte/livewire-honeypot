@@ -20,8 +20,8 @@ test('the default view uses the component field override for binding and errors'
     EdgeCaseHoneypotComponent::$settings['randomize_field_name'] = $randomized;
     config(['livewire-honeypot.field_name' => 'global_trap']);
     $component = Livewire::test(EdgeCaseHoneypotComponent::class);
-    $component->assertSeeHtml('wire:model.lazy="trap"')
-        ->assertDontSeeHtml('wire:model.lazy="global_trap"');
+    $component->assertSeeHtml('wire:model="trap"')
+        ->assertDontSeeHtml('wire:model="global_trap"');
     $component->assertSeeHtml('name="' . $component->hp_field_name . '"');
 
     $component->set('trap', 'spam')->call('submit')

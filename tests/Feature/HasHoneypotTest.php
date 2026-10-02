@@ -264,7 +264,7 @@ test('the default view renders the derived name but keeps the bait binding', fun
 
     $component = Livewire::test(TestComponent::class);
     $component->assertSeeHtml('name="' . $component->hp_field_name . '"')
-        ->assertSeeHtml('wire:model.lazy="hp_website"')
+        ->assertSeeHtml('wire:model="hp_website"')
         ->assertDontSeeHtml('name="hp_website"');
 
     $component->set('hp_website', 'spam')->call('submit')->assertHasErrors(['hp_website' => 'size']);

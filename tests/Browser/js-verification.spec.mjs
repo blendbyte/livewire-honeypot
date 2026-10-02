@@ -48,13 +48,20 @@ for (const binding of ['default', 'custom', 'configured']) {
 test('a filled bait field from a component config override is rejected', async ({ page }) => {
     await page.goto('/configured');
     // The HTML name is derived from the form token, so find the bait by its binding.
-    const bait = page.locator('input[wire\\:model\\.lazy="trap"]');
+    const bait = page.locator('input[wire\\:model="trap"]');
     await expect(bait).toHaveAttribute('name', /^[a-z]+_[0-9a-f]{4}$/);
     await page.getByLabel('Email').fill('visitor@example.com');
     // Make the visually hidden input reachable for actual keyboard input.
     await bait.evaluate(input => input.closest('[aria-hidden="true"]').removeAttribute('class'));
+    // The deferred binding sends nothing to the server until the form is submitted.
+    let requests = 0;
+    page.on('request', request => request.method() === 'POST' && requests++);
     await bait.fill('spam');
+    await bait.blur();
+    await page.waitForTimeout(300);
+    expect(requests).toBe(0);
     await page.getByRole('button', { name: 'Submit', exact: true }).click();
+    await expect.poll(() => requests).toBe(1);
     await expect(page.locator('.hp-error')).toHaveText('Spam detected.');
     await expect(page.locator('.submissions')).toHaveText('0');
 });
