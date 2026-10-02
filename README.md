@@ -193,8 +193,9 @@ Bypass honeypot checks in tests that focus on the rest of your form:
 use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 
 beforeEach(fn () => HoneypotService::fake());
-afterEach(fn () => HoneypotService::resetFake());
 ```
+
+Fake mode ends with each test's application, so it never leaks into other tests. Call `HoneypotService::resetFake()` to turn it off within a test.
 
 To test the waiting period itself, mount the component and advance time before submitting:
 

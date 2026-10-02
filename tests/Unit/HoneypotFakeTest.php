@@ -65,8 +65,14 @@ test('validate() resumes normal behaviour after resetFake()', function () {
     $this->service->validate($data);
 })->throws(ValidationException::class);
 
-test('fake mode does not persist between test instances (tearDown resets it)', function () {
-    // This test relies on TestCase::tearDown() calling resetFake()
-    // If a previous test called fake() without resetting, this would catch it
+test('fake mode ends with the application without calling resetFake()', function () {
+    HoneypotService::fake();
+    $this->refreshApplication();
+
+    expect(HoneypotService::isFake())->toBeFalse();
+});
+
+test('fake mode does not leak into the next test', function () {
+    // Earlier tests in this file call fake() without resetFake(), and TestCase does not reset it.
     expect(HoneypotService::isFake())->toBeFalse();
 });

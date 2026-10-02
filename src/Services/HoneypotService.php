@@ -23,25 +23,25 @@ class HoneypotService
         'reference', 'remarks', 'topic', 'occasion', 'referral', 'interest', 'preference', 'category',
     ];
 
-    protected static bool $fake = false;
+    /** Container binding for fake mode, so it ends with the application like Laravel's own fakes. */
+    private const string FAKE_BINDING = 'livewire-honeypot.fake';
 
     /**
      * Put the honeypot into fake mode: all validation is bypassed.
-     * Call this in your test setUp or at the top of a test.
-     * Remember to call resetFake() afterwards (or use afterEach()).
+     * Call this in a test once the application has booted, for example in beforeEach().
+     * It lasts until resetFake() or until the test's application is torn down.
      */
     public static function fake(): void
     {
-        static::$fake = true;
+        app()->instance(self::FAKE_BINDING, true);
     }
 
     /**
-     * Restore normal validation behaviour.
-     * Call this in your test tearDown or afterEach().
+     * Restore normal validation behaviour within the current test.
      */
     public static function resetFake(): void
     {
-        static::$fake = false;
+        app()->forgetInstance(self::FAKE_BINDING);
     }
 
     /**
@@ -49,7 +49,7 @@ class HoneypotService
      */
     public static function isFake(): bool
     {
-        return static::$fake;
+        return app()->bound(self::FAKE_BINDING) && app(self::FAKE_BINDING) === true;
     }
 
     public function generate(): array
@@ -187,7 +187,7 @@ class HoneypotService
 
     public function validate(array $data, ?int $minimumSeconds = null): void
     {
-        if (static::$fake) {
+        if (static::isFake()) {
             return;
         }
 
@@ -219,7 +219,7 @@ class HoneypotService
      */
     public function isCaught(array $data, ?int $minimumSeconds = null): bool
     {
-        if (static::$fake) {
+        if (static::isFake()) {
             return false;
         }
 
