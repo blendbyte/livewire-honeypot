@@ -38,8 +38,10 @@ return [
     | Honeypot Field Name
     |--------------------------------------------------------------------------
     |
-    | The name of the honeypot field. Bots often fill in all fields,
-    | but this field should remain empty for legitimate users.
+    | The bait field that must stay empty: the Livewire property bound by
+    | <x-honeypot />, and the key that plain-form errors are reported under.
+    | With randomize_field_name enabled, the HTML name is generated instead.
+    | A custom value needs a matching public property on Livewire components.
     |
     */
 

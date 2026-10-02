@@ -54,7 +54,7 @@ For custom handling, listen for `Blendbyte\LivewireHoneypot\Events\HoneypotDetec
 
 ## Optional JavaScript verification
 
-`HONEYPOT_JS_VERIFICATION=true` requires a nonempty marker populated by Alpine. It is an additional heuristic, not proof of a human visitor.
+`HONEYPOT_JS_VERIFICATION=true` requires a nonempty `hp_js` marker that JavaScript fills on page load: Alpine in Livewire components, a small inline script in [plain forms](plain-forms.md#javascript-verification). It is an additional heuristic, not proof of a human visitor.
 
 You can also enable or disable verification per component with `honeypotConfig()`. The view uses that same setting. After `resetHoneypot()`, the JS input is replaced and Alpine fills a fresh marker, so the form can be submitted again without reloading.
 

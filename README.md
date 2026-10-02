@@ -8,7 +8,13 @@
 [![Laravel](https://img.shields.io/badge/Laravel-13-ff2d20?style=flat-square)](https://laravel.com)
 [![Livewire](https://img.shields.io/badge/Livewire-4-fb70a9?style=flat-square)](https://livewire.laravel.com)
 
-Honeypot and minimum-fill-time protection for Livewire forms, without CAPTCHAs or external requests. Requires PHP 8.5, Laravel 13, and Livewire 4.
+Spam protection for Livewire and plain Laravel forms, without CAPTCHAs or external requests. Requires PHP 8.5, Laravel 13, and Livewire 4.
+
+- **Hidden bait field** with a generated name per form, which browsers and password managers leave alone
+- **Minimum fill time and form expiry**, tracked on the server so bots cannot fake them
+- **Plain forms too:** `<x-honeypot />` renders a signed token for forms posting to a controller
+- **Silent rejection** that answers bots with a fake success
+- Optional **JavaScript check**, **events and logging**, **CSP nonces**, and **12 languages**
 
 ## Install
 
@@ -64,11 +70,38 @@ In `resources/views/livewire/contact-form.blade.php`:
 </form>
 ```
 
-By default, the hidden bait must stay empty, submissions must wait **5 seconds**, and forms expire after **1 hour** (`HONEYPOT_MAXIMUM_FILL_SECONDS`, `0` disables expiry). Honeypot errors appear beside the component; style `.hp-error` to match your form.
+By default, the hidden bait must stay empty, submissions must wait **5 seconds**, and forms expire after **1 hour**. Honeypot errors appear beside the component; style `.hp-error` to match your form.
 
 Keep the trait on the Livewire component, including when using a Livewire `Form` object. Call `resetHoneypot()` after a successful submission to refresh the form's protection.
 
-### Silent rejection
+## Protect a plain form
+
+Outside a Livewire component, the same Blade component renders a signed token for forms posting to a controller:
+
+```blade
+<form method="POST" action="/contact">
+    @csrf
+    <x-honeypot />
+
+    {{-- Your regular fields and submit button. --}}
+</form>
+```
+
+```php
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
+use Illuminate\Http\Request;
+
+public function store(Request $request, HoneypotService $honeypot)
+{
+    $honeypot->validate($request->all());
+
+    // Validate and process the rest of the form.
+}
+```
+
+A rejected submission redirects back, and the error appears beside the component. Every render gets a fresh token, so do not cache pages containing the form. See [plain HTML forms](docs/plain-forms.md) for JavaScript verification and for rendering the fields yourself.
+
+## Silent rejection
 
 A validation error tells a bot it was caught, and it can wait and resubmit. To answer bots with a fake success instead, check `isHoneypotCaught()` and return early:
 
@@ -96,14 +129,24 @@ Real users can be caught too, for example by autofilling and submitting faster t
 
 ## Configuration
 
-Most applications can use the defaults. To change the waiting time or enable detection logs:
+Most applications can use the defaults. To change them, set these in `.env`:
 
-```env
-HONEYPOT_MINIMUM_FILL_SECONDS=3
-HONEYPOT_LOGGING=true
-```
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `HONEYPOT_MINIMUM_FILL_SECONDS` | `5` | Seconds a visitor must spend on the form before submitting. `0` disables the check. |
+| `HONEYPOT_MAXIMUM_FILL_SECONDS` | `3600` | Older forms ask the visitor to reload. Must be greater than the minimum; `0` disables expiry. |
+| `HONEYPOT_RANDOMIZE_FIELD_NAME` | `true` | Renders the bait with a generated HTML name such as `referral_3f9a`. |
+| `HONEYPOT_FIELD_NAME` | `hp_website` | The Livewire property bound to the bait, and the key errors are reported under. |
+| `HONEYPOT_JS_VERIFICATION` | `false` | Also requires a marker that JavaScript fills on page load. |
+| `HONEYPOT_LOGGING` | `false` | Logs every detection. |
+| `HONEYPOT_LOG_CHANNEL` | default channel | The log channel for detections. |
+| `HONEYPOT_LOG_LEVEL` | `warning` | The log level for detections. |
+| `HONEYPOT_LOG_VALUE` | `false` | Also logs the bait value, shortened to 200 characters. It can contain a visitor's autofilled personal data. |
+| `HONEYPOT_CAUGHT_CACHE_STORE` | default store | The cache store for tokens caught by silent rejection. |
+| `HONEYPOT_TOKEN_LENGTH` | `24` | The length of the random part of a form token. |
+| `HONEYPOT_TOKEN_MIN_LENGTH` | `10` | The shortest random part accepted on submit. |
 
-Set the minimum to `0` to disable the waiting period. The maximum form age must be greater than the minimum, or `0` to disable expiry. For all options, publish the [configuration file](config/livewire-honeypot.php):
+The spam responder is chosen in the [configuration file](config/livewire-honeypot.php), which you can publish:
 
 ```bash
 php artisan vendor:publish --tag=livewire-honeypot-config
@@ -138,9 +181,9 @@ This also works with `form.trap` on a Livewire form object. If you change `field
 
 ### Generated HTML names
 
-The bait input's HTML name is generated from the form's token, such as `referral_3f9a`. It changes with every form, does not look like a honeypot, and avoids names that browsers and password managers autofill. Only the HTML name changes: the Livewire binding still targets `field_name` or your custom `wire:model` path. Password-manager ignore hints are included as well, but autofill behavior varies by browser and extension.
+The bait's HTML name is generated from the form's token, so it changes with every form, does not look like a honeypot, and avoids names that browsers and password managers autofill. Only the HTML name changes: the Livewire binding still targets `field_name` or your custom `wire:model` path. Password-manager ignore hints are included as well, but autofill behavior varies by browser and extension.
 
-To render `field_name` as the HTML name instead, set `HONEYPOT_RANDOMIZE_FIELD_NAME=false`, or pass a fixed name with `<x-honeypot field-name="..." />`.
+To keep a fixed name, set `HONEYPOT_RANDOMIZE_FIELD_NAME=false` or pass one with `<x-honeypot field-name="..." />`.
 
 ## Testing
 
@@ -161,15 +204,15 @@ $this->travel(5)->seconds();
 $component->call('submit');
 ```
 
-The timestamp and token are locked properties, so use time travel instead of setting them through Livewire.
+The timestamp and token are locked properties, so use time travel instead of setting them through Livewire. To select the bait input in browser tests, use its `wire:model` attribute rather than its generated name.
 
-For the package's own PHP and browser checks, see [running the test suites](docs/testing.md).
+See [testing](docs/testing.md) for silent rejection tests and the package's own PHP and browser suites.
 
 ## More options
 
-- [Plain HTML forms](docs/plain-forms.md): `<x-honeypot />` in forms posting to a controller.
-- [Advanced options](docs/advanced.md): CSP, responders, silent rejection, events, translations, and JS verification.
-- [Upgrading existing integrations](docs/upgrading.md): published views, custom bindings, and signed tokens.
+- [Plain HTML forms](docs/plain-forms.md): JavaScript verification and rendering the fields yourself.
+- [Advanced options](docs/advanced.md): CSP, responders, silent rejection, events and logs, JS verification, views, and translations.
+- [Upgrading](docs/upgrading.md): what changed since 2.1.0, and earlier integration changes.
 
 Honeypots catch simple automation, not every bot. Keep normal validation, CSRF protection, and rate limiting on your forms.
 
