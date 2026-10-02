@@ -13,6 +13,9 @@ final class HoneypotConfig
         'maximum_fill_seconds' => 3600,
         'field_name' => 'hp_website',
         'token_length' => 24,
+        // Deprecated and ignored. Kept until the next major version because config files
+        // published from 2.1 read this default.
+        'token_min_length' => 10,
         'randomize_field_name' => true,
         'logging' => [
             'enabled' => false,
