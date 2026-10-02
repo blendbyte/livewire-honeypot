@@ -32,7 +32,7 @@ A rejected submission redirects back with a validation error, which the componen
 
 The bait gets a name derived from the token, such as `referral_3f9a`, that changes with every form and avoids names that browsers autofill. With `randomize_field_name` disabled, it uses `field_name`. Errors are always reported under `field_name`. A `field-name` attribute must match one of those two names, because validation only looks there, and `wire:model` attributes are ignored in a plain form.
 
-This also works for a plain form inside a Livewire component that does not use `HasHoneypot`, such as a newsletter form posting to a controller. Inside a component with the trait, `<x-honeypot />` always renders the Livewire version.
+This also works for a plain form inside a Livewire component that does not use `HasHoneypot`, such as a newsletter form posting to a controller. Livewire updates leave the honeypot fields alone there (`wire:ignore`), so re-rendering the component does not restart the waiting time. Inside a component with the trait, `<x-honeypot />` always renders the Livewire version.
 
 To answer bots with a fake success instead of an error, use `isCaught()` with the same data. It never calls the configured responder, and it remembers caught tokens until their form expires so a retry with the same token is caught too. An expired form still throws the normal validation error, so the visitor sees it and can reload. See [silent rejection](advanced.md#silent-rejection).
 

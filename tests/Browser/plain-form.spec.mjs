@@ -27,3 +27,24 @@ test('a filled plain bait is rejected with a visible error', async ({ page }) =>
     await expect(page.locator('.hp-error')).toHaveText('Spam detected.');
     await expect(page.locator('.accepted')).toHaveCount(0);
 });
+
+test('a plain form inside a Livewire component keeps its token across re-renders', async ({ page }) => {
+    await page.goto('/newsletter');
+    const token = page.locator('input[name="hp_token"]');
+    const marker = page.locator('input[name="hp_js"]');
+    const bait = page.locator('input[type="text"][tabindex="-1"]');
+    await expect(marker).toHaveValue('1');
+    const originalToken = await token.inputValue();
+    const originalName = await bait.getAttribute('name');
+
+    // wire:model.live re-renders the component, which would otherwise render a new token.
+    await page.getByLabel('Name').fill('Visitor');
+    await expect(page.locator('.length')).toHaveText('7');
+
+    await expect(token).toHaveValue(originalToken);
+    await expect(bait).toHaveAttribute('name', originalName);
+    await expect(marker).toHaveValue('1');
+
+    await page.getByRole('button', { name: 'Subscribe' }).click();
+    await expect(page.locator('.accepted')).toHaveText('Accepted');
+});

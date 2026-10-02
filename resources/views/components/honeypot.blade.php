@@ -9,6 +9,8 @@
         : null;
     // A plain form, including one inside a Livewire component without the trait, posts to a controller.
     $plainToken = $honeypotComponent === null ? $honeypotService->token() : null;
+    // Livewire re-renders would swap in a new token, restarting the timer and clearing the JS marker.
+    $ignoreLivewireUpdates = $plainToken !== null && isset($__livewire);
     $requiresJsVerification = $honeypotComponent?->isHoneypotJsVerificationRequired()
         ?? \Blendbyte\LivewireHoneypot\HoneypotConfig::get('require_js_verification');
     $cspNonce = $nonce ?? \Illuminate\Support\Facades\Vite::cspNonce();
@@ -34,7 +36,7 @@
         }
     }
 @endphp
-<div class="{{ $wrapperClass }}" aria-hidden="true">
+<div class="{{ $wrapperClass }}" aria-hidden="true"{{ $ignoreLivewireUpdates ? ' wire:ignore' : '' }}>
     <label>
         <span>{{ __('livewire-honeypot::validation.honeypot_label') }}</span>
         <input type="text"

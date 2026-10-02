@@ -76,6 +76,16 @@ test('a Livewire component without the trait renders a plain form', function () 
         ->assertDontSeeHtml('wire:model');
 });
 
+test('a plain form inside a Livewire component is ignored by Livewire updates', function () {
+    // Otherwise each re-render would swap in a new token and restart the waiting time.
+    Livewire::test(PlainFormHostComponent::class)->assertSeeHtml('aria-hidden="true" wire:ignore>');
+});
+
+test('only a plain form inside Livewire ignores Livewire updates', function () {
+    expect(Blade::render('<x-honeypot />'))->not->toContain('wire:ignore');
+    expect(renderInHoneypotComponent('<x-honeypot />'))->not->toContain('wire:ignore');
+});
+
 test('a plain form submits through the middleware after the fill time', function () {
     $fields = plainHoneypotFields($this->get('/plain-contact')->getContent());
     $this->travel(5)->seconds();

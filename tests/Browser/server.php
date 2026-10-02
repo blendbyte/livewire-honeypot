@@ -109,7 +109,34 @@ class ConfiguredFieldBrowserComponent extends JsVerificationBrowserComponent
     }
 }
 
+// A newsletter-style plain form inside a Livewire component that does not use the trait.
+class NewsletterBrowserComponent extends Component
+{
+    public string $name = '';
+
+    public function boot(): void
+    {
+        config(['livewire-honeypot.require_js_verification' => true]);
+    }
+
+    public function render(): string
+    {
+        return <<<'BLADE'
+<div>
+    <form method="POST" action="/plain">
+        @csrf
+        <x-honeypot />
+        <label>Name <input type="text" wire:model.live="name"></label>
+        <p class="length">{{ strlen($name) }}</p>
+        <button type="submit">Subscribe</button>
+    </form>
+</div>
+BLADE;
+    }
+}
+
 Livewire::component('browser-honeypot', JsVerificationBrowserComponent::class);
+Livewire::component('newsletter-honeypot', NewsletterBrowserComponent::class);
 Livewire::component('configured-honeypot', ConfiguredFieldBrowserComponent::class);
 Vite::useCspNonce('browser-test-nonce');
 
@@ -145,6 +172,17 @@ BLADE, ['accepted' => $accepted]);
 }
 
 Route::middleware('web')->get('/plain', fn () => plainBrowserPage());
+Route::middleware('web')->get('/newsletter', function () {
+    $html = Blade::render(<<<'BLADE'
+<!doctype html>
+<html><head><meta name="csrf-token" content="{{ csrf_token() }}">@livewireStyles</head><body>
+<livewire:newsletter-honeypot />
+@livewireScripts
+</body></html>
+BLADE);
+
+    return response($html)->header('Content-Security-Policy', browserCspPolicy());
+});
 Route::middleware('web')->post('/plain', function (Request $request, HoneypotService $honeypot) {
     config(['livewire-honeypot.require_js_verification' => true]);
 
