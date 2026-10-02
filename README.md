@@ -124,7 +124,7 @@ beforeEach(fn () => HoneypotService::fake());
 - [Plain HTML forms](docs/plain-forms.md): JavaScript verification and rendering the fields yourself.
 - [Advanced options](docs/advanced.md): silent rejection, responders, events and logs, CSP, JS verification, views, and translations.
 - [Testing](docs/testing.md): testing your forms and running the package's own suites.
-- [Upgrading](docs/upgrading.md): what changed since 2.1.0.
+- [Upgrading](docs/upgrading.md): what to check when upgrading to 2.2.
 
 Honeypots catch simple automation, not every bot. Keep normal validation, CSRF protection, and rate limiting on your forms.
 
