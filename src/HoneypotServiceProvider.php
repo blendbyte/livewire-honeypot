@@ -8,11 +8,15 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Livewire\Component;
 use Livewire\Livewire;
 
 class HoneypotServiceProvider extends ServiceProvider
 {
+    /** Maximum characters of a bait value written to the log. */
+    private const int LOGGED_VALUE_LIMIT = 200;
+
     public function register(): void
     {
         $this->mergeConfigFrom(
@@ -76,6 +80,11 @@ class HoneypotServiceProvider extends ServiceProvider
                     'user_agent' => $event->userAgent,
                     'component'  => $event->component,
                 ];
+
+                // Kept in the context, never the message, so the log formatter escapes it.
+                if ($event->filledValue !== null && HoneypotConfig::get('logging.include_value')) {
+                    $context['filled_value'] = Str::limit($event->filledValue, self::LOGGED_VALUE_LIMIT);
+                }
 
                 if ($channel) {
                     Log::channel((string) $channel)->log($level, 'Honeypot triggered', $context);

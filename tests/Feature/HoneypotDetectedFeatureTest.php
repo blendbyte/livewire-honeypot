@@ -51,6 +51,33 @@ test('HasHoneypot event includes component class name', function () {
     });
 });
 
+test('HasHoneypot event carries the filled bait value', function () {
+    Event::fake();
+
+    $fieldName = config('livewire-honeypot.field_name', 'hp_website');
+    $component = Livewire::test(EventTestComponent::class);
+    $component->set($fieldName, 'https://spam.example');
+    $this->travel(10)->seconds();
+    $component->call('submit');
+
+    Event::assertDispatched(HoneypotDetected::class, function (HoneypotDetected $event) {
+        return $event->reason === 'honeypot_filled'
+            && $event->filledValue === 'https://spam.example';
+    });
+});
+
+test('HasHoneypot event has no filled value for other reasons', function () {
+    Event::fake();
+
+    $component = Livewire::test(EventTestComponent::class);
+    $component->call('submit');
+
+    Event::assertDispatched(HoneypotDetected::class, function (HoneypotDetected $event) {
+        return $event->reason === 'submitted_too_quickly'
+            && $event->filledValue === null;
+    });
+});
+
 test('HasHoneypot does not dispatch event on valid submission', function () {
     Event::fake();
 

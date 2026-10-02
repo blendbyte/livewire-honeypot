@@ -18,6 +18,7 @@ final class HoneypotConfig
             'enabled' => false,
             'channel' => null,
             'level' => 'warning',
+            'include_value' => false,
         ],
         'spam_responder' => ValidationExceptionResponder::class,
         'require_js_verification' => false,

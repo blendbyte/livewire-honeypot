@@ -165,3 +165,76 @@ test('it does not log on a valid submission', function () {
 
     expect($handler->getRecords())->toBeEmpty();
 });
+
+// ---------------------------------------------------------------------------
+// Filled value (logging.include_value)
+// ---------------------------------------------------------------------------
+
+/**
+ * Submit $baitValue in the bait field with a valid token and return the log handler.
+ */
+function logBaitSubmission(mixed $baitValue, bool $includeValue, int $secondsAgo = 10): TestHandler
+{
+    $handler = setupTestLogChannel();
+    config([
+        'livewire-honeypot.logging.enabled'       => true,
+        'livewire-honeypot.logging.include_value' => $includeValue,
+    ]);
+
+    (new HoneypotServiceProvider(app()))->boot();
+
+    $startedAt = now()->subSeconds($secondsAgo)->getTimestamp();
+    $data = [
+        config('livewire-honeypot.field_name') => $baitValue,
+        'hp_started_at' => $startedAt,
+        'hp_token'      => app(HoneypotService::class)->token($startedAt),
+    ];
+
+    try { (new HoneypotService())->validate($data); } catch (ValidationException) {}
+
+    return $handler;
+}
+
+test('it does not log the filled value by default', function () {
+    $handler = logBaitSubmission('jane@example.com', includeValue: false);
+
+    expect($handler->hasWarningThatPasses(
+        fn ($record) => ($record->context['reason'] ?? null) === 'honeypot_filled'
+            && ! array_key_exists('filled_value', $record->context)
+    ))->toBeTrue();
+});
+
+test('it logs the filled value when include_value is enabled', function () {
+    $handler = logBaitSubmission("https://spam.example\nfake log line", includeValue: true);
+
+    expect($handler->hasWarningThatPasses(
+        fn ($record) => $record->message === 'Honeypot triggered'
+            && ($record->context['filled_value'] ?? null) === "https://spam.example\nfake log line"
+    ))->toBeTrue();
+});
+
+test('it truncates long filled values in the log', function () {
+    $handler = logBaitSubmission(str_repeat('a', 10_000), includeValue: true);
+
+    expect($handler->hasWarningThatPasses(
+        fn ($record) => ($record->context['filled_value'] ?? null) === str_repeat('a', 200) . '...'
+    ))->toBeTrue();
+});
+
+test('it encodes non-string filled values for the log', function () {
+    $handler = logBaitSubmission(['url' => 'https://spam.example'], includeValue: true);
+
+    expect($handler->hasWarningThatPasses(
+        fn ($record) => ($record->context['reason'] ?? null) === 'honeypot_filled'
+            && ($record->context['filled_value'] ?? null) === '{"url":"https://spam.example"}'
+    ))->toBeTrue();
+});
+
+test('it omits the filled value for reasons other than a filled bait field', function () {
+    $handler = logBaitSubmission('', includeValue: true, secondsAgo: 0);
+
+    expect($handler->hasWarningThatPasses(
+        fn ($record) => ($record->context['reason'] ?? null) === 'submitted_too_quickly'
+            && ! array_key_exists('filled_value', $record->context)
+    ))->toBeTrue();
+});

@@ -242,7 +242,7 @@ trait HasHoneypot
                 'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
             ])->validate();
         } catch (ValidationException $e) {
-            $violation = HoneypotViolation::fromValidationException($e, $fieldName);
+            $violation = HoneypotViolation::fromValidationException($e, $fieldName, Arr::get($data, $fieldName));
         }
 
         // JS verification: field must be populated by Alpine.js on page load
@@ -263,7 +263,7 @@ trait HasHoneypot
         }
 
         if ($violation !== null) {
-            event(HoneypotDetected::fromRequest($fieldName, $violation->reason, static::class));
+            event(HoneypotDetected::fromRequest($fieldName, $violation->reason, static::class, $violation->filledValue));
         }
 
         return $violation;

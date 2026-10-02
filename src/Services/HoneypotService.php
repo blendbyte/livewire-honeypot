@@ -9,6 +9,7 @@ use Blendbyte\LivewireHoneypot\HoneypotConfig;
 use Blendbyte\LivewireHoneypot\HoneypotViolation;
 use Blendbyte\LivewireHoneypot\Responders\ValidationExceptionResponder;
 use Illuminate\Encryption\MissingAppKeyException;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
@@ -211,7 +212,7 @@ class HoneypotService
                 'hp_started_at.max' => __('livewire-honeypot::validation.invalid_form_data'),
             ])->validate();
         } catch (ValidationException $e) {
-            $violation = HoneypotViolation::fromValidationException($e, $fieldName);
+            $violation = HoneypotViolation::fromValidationException($e, $fieldName, Arr::get($data, $fieldName));
         }
 
         // JS verification: field must be populated by Alpine.js on page load
@@ -234,7 +235,7 @@ class HoneypotService
         }
 
         if ($violation !== null) {
-            event(HoneypotDetected::fromRequest($fieldName, $violation->reason));
+            event(HoneypotDetected::fromRequest($fieldName, $violation->reason, filledValue: $violation->filledValue));
         }
 
         return $violation;

@@ -15,17 +15,37 @@ final readonly class HoneypotViolation
         public string $reason,
         public string $message,
         public ?ValidationException $exception = null,
+        public ?string $filledValue = null,
     ) {}
 
-    public static function fromValidationException(ValidationException $e, string $fieldName): self
+    /**
+     * @param  mixed  $baitValue  The submitted bait field value, kept only when the bait field failed
+     */
+    public static function fromValidationException(ValidationException $e, string $fieldName, mixed $baitValue = null): self
     {
         $errors = $e->errors();
+        $baitFailed = isset($errors[$fieldName]);
 
         return new self(
-            reason: isset($errors[$fieldName]) ? 'honeypot_filled' : 'invalid_form_data',
+            reason: $baitFailed ? 'honeypot_filled' : 'invalid_form_data',
             message: $errors[$fieldName][0] ?? __('livewire-honeypot::validation.invalid_form_data'),
             exception: $e,
+            filledValue: $baitFailed ? self::stringify($baitValue) : null,
         );
+    }
+
+    /**
+     * Bots may submit any JSON type, so non-strings are encoded rather than cast.
+     */
+    private static function stringify(mixed $value): ?string
+    {
+        return match (true) {
+            $value === null => null,
+            is_string($value) => $value,
+            is_scalar($value) => var_export($value, true),
+            default => json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PARTIAL_OUTPUT_ON_ERROR)
+                ?: get_debug_type($value),
+        };
     }
 
     /**

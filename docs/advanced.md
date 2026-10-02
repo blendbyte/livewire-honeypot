@@ -48,7 +48,9 @@ The fake success also applies to real users who are caught, such as someone who 
 
 Set `HONEYPOT_LOGGING=true` to log detections. `HONEYPOT_LOG_CHANNEL` selects the channel and `HONEYPOT_LOG_LEVEL` defaults to `warning`.
 
-For custom handling, listen for `Blendbyte\LivewireHoneypot\Events\HoneypotDetected`. Its properties are `reason`, `fieldName`, `ipAddress`, `userAgent`, and `component` (null outside Livewire). Reasons are `honeypot_filled`, `submitted_too_quickly`, `invalid_form_data`, `js_verification_failed`, and `previously_detected`. The last one is used by the silent rejection API when a token that was already caught is submitted again.
+Set `HONEYPOT_LOG_VALUE=true` to also log what was entered in the bait field as `filled_value`, shortened to 200 characters. This helps tell bots apart from browser or password manager autofill. It is off by default because an autofilled value can be a real visitor's name, email address, or other personal data.
+
+For custom handling, listen for `Blendbyte\LivewireHoneypot\Events\HoneypotDetected`. Its properties are `reason`, `fieldName`, `ipAddress`, `userAgent`, `component` (null outside Livewire), and `filledValue`. `filledValue` is the full submitted bait value for `honeypot_filled` and null for every other reason. Arrays and other non-string values are JSON-encoded. Treat it as untrusted input that may contain personal data. Reasons are `honeypot_filled`, `submitted_too_quickly`, `invalid_form_data`, `js_verification_failed`, and `previously_detected`. The last one is used by the silent rejection API when a token that was already caught is submitted again.
 
 ## Optional JavaScript verification
 

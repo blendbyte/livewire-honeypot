@@ -81,12 +81,18 @@ return [
     | use the default channel. The level must be a valid PSR-3 level string
     | (debug, info, notice, warning, error, critical, alert, emergency).
     |
+    | Set include_value to true to also log what was typed into the bait
+    | field, shortened to 200 characters. This helps tell bots apart from
+    | browser autofill, but autofilled values can be a real visitor's
+    | personal data, so it is off by default.
+    |
     */
 
     'logging' => [
         'enabled' => (bool) env('HONEYPOT_LOGGING', $defaults['logging']['enabled']),
         'channel' => env('HONEYPOT_LOG_CHANNEL', $defaults['logging']['channel']),
         'level'   => env('HONEYPOT_LOG_LEVEL', $defaults['logging']['level']),
+        'include_value' => (bool) env('HONEYPOT_LOG_VALUE', $defaults['logging']['include_value']),
     ],
 
     /*
