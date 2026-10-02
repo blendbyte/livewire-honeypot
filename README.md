@@ -136,15 +136,11 @@ $this->resetHoneypotForModel('contact.trap');
 
 This also works with `form.trap` on a Livewire form object. If you change `field_name` globally or through `honeypotConfig()`, declare a matching public property on the component. The default `<x-honeypot />` binding follows that setting automatically.
 
-### Randomized HTML names
+### Generated HTML names
 
-Set `HONEYPOT_RANDOMIZE_FIELD_NAME=true` and pass the generated name to the view:
+The bait input's HTML name is generated from the form's token, such as `referral_3f9a`. It changes with every form, does not look like a honeypot, and avoids names that browsers and password managers autofill. Only the HTML name changes: the Livewire binding still targets `field_name` or your custom `wire:model` path. Password-manager ignore hints are included as well, but autofill behavior varies by browser and extension.
 
-```blade
-<x-honeypot :field-name="$hp_field_name" />
-```
-
-This changes the HTML name while keeping the Livewire binding intact. Password-manager ignore hints are included, but autofill behavior varies by browser and extension.
+To render `field_name` as the HTML name instead, set `HONEYPOT_RANDOMIZE_FIELD_NAME=false`, or pass a fixed name with `<x-honeypot field-name="..." />`.
 
 ## Testing
 

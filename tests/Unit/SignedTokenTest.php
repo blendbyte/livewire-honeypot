@@ -110,6 +110,29 @@ test('previous app keys keep open forms valid until the key is removed', functio
     expect($this->service->startedAtFromToken($newToken))->toBeNull();
 })->with(['old-application-key', 'base64:' . base64_encode(str_repeat('k', 32))]);
 
+test('derived bait names look like ordinary fields and differ per token', function () {
+    $first = $this->service->token();
+    $second = $this->service->token();
+
+    expect($this->service->baitName($first))->toMatch('/^[a-z]+_[0-9a-f]{4}$/')
+        ->toBe($this->service->baitName($first))
+        ->not->toBe($this->service->baitName($second));
+});
+
+test('a derived bait name from a previous app key is still found', function () {
+    config(['app.key' => 'old-application-key']);
+    $token = $this->service->token();
+    $baitName = $this->service->baitName($token);
+    $this->travel(5)->seconds();
+
+    config(['app.key' => 'new-application-key', 'app.previous_keys' => ['old-application-key']]);
+    expect($this->service->baitName($token))->not->toBe($baitName);
+
+    $this->service->validate(['hp_token' => $token, $baitName => '']);
+    expect(fn () => $this->service->validate(['hp_token' => $token, $baitName => 'spam']))
+        ->toThrow(ValidationException::class, 'Spam detected.');
+});
+
 test('empty previous keys cannot authenticate forged tokens', function () {
     config(['app.previous_keys' => ['', null, false, 0]]);
     $payload = str_repeat('a', 24) . '.' . now()->subSeconds(10)->getTimestamp();

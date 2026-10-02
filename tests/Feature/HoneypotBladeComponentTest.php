@@ -1,5 +1,7 @@
 <?php
 
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
+
 // ---------------------------------------------------------------------------
 // Blade component: <x-honeypot />
 // ---------------------------------------------------------------------------
@@ -47,12 +49,27 @@ test('it sets aria-hidden on the wrapper div', function () {
     expect($html)->toContain('aria-hidden="true"');
 });
 
-test('it injects offscreen CSS styles', function () {
+test('it hides the wrapper with screen-reader-only CSS under an inconspicuous class', function () {
+    $class = app(HoneypotService::class)->wrapperClass();
     $html = Blade::render('<x-honeypot />');
 
-    expect($html)->toContain('.hp-field')
-        ->toContain('position: absolute')
+    expect($class)->toMatch('/^f[0-9a-f]{8}$/');
+    expect($html)->toContain('<div class="' . $class . '" aria-hidden="true">')
+        ->toContain('.' . $class . ' {')
+        ->toContain('clip-path: inset(50%)')
+        ->not->toContain('hp-field')
+        ->not->toContain('-10000px')
         ->not->toContain('nonce=');
+});
+
+test('the wrapper class is stable per app key', function () {
+    $service = app(HoneypotService::class);
+    $class = $service->wrapperClass();
+
+    expect($service->wrapperClass())->toBe($class);
+
+    config(['app.key' => 'another-application-key']);
+    expect($service->wrapperClass())->not->toBe($class);
 });
 
 test('it uses the Vite CSP nonce on its hiding stylesheet', function () {
@@ -60,9 +77,11 @@ test('it uses the Vite CSP nonce on its hiding stylesheet', function () {
 
     $html = Blade::render('<x-honeypot />');
 
+    $class = app(HoneypotService::class)->wrapperClass();
+
     expect($html)->toMatch('/<style\s+nonce="vite-nonce"\s*>/')
-        ->toContain('class="hp-field"')
-        ->toContain('.hp-field');
+        ->toContain('class="' . $class . '"')
+        ->toContain('.' . $class . ' {');
 });
 
 test('an explicit CSP nonce takes precedence over the Vite nonce', function () {

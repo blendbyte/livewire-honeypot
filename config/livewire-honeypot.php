@@ -60,11 +60,13 @@ return [
     | Randomize Field Name
     |--------------------------------------------------------------------------
     |
-    | When enabled, the honeypot bait field will be rendered in HTML with a
-    | random name (e.g. "hp_a3f7c2") instead of the configured field_name.
-    | This defeats bots that skip inputs by recognising known honeypot names.
-    | The Livewire wire:model binding is unaffected — only the HTML name
-    | attribute is randomised. Set to true to enable.
+    | When enabled, <x-honeypot /> in a Livewire component renders the bait
+    | with a name derived from the form token (e.g. "referral_3f9a") instead
+    | of the configured field_name. The name changes with every form, does
+    | not look like a honeypot, and avoids names that browsers and password
+    | managers autofill. Only the HTML name attribute changes; the Livewire
+    | wire:model binding still targets field_name. Set to false to render
+    | field_name as the HTML name.
     |
     */
 

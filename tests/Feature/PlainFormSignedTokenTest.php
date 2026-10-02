@@ -93,3 +93,49 @@ test('malformed JS markers still use the configured spam responder', function ()
 
     $this->postJson('/signed-contact', [...$data, 'hp_js' => ['1']])->assertForbidden();
 });
+
+/**
+ * A plain form that renders the derived bait name instead of field_name.
+ */
+function derivedBaitForm(string $value = ''): array
+{
+    $service = app(HoneypotService::class);
+    $token = $service->generate()['hp_token'];
+
+    return ['hp_token' => $token, $service->baitName($token) => $value];
+}
+
+test('plain forms accept an empty bait under its derived name through the middleware', function () {
+    $data = derivedBaitForm();
+    $this->travel(5)->seconds();
+
+    $this->postJson('/signed-contact', $data)->assertOk();
+});
+
+test('plain forms reject a filled bait under its derived name', function () {
+    Event::fake([HoneypotDetected::class]);
+    $data = derivedBaitForm('https://spam.example');
+    $this->travel(5)->seconds();
+
+    $this->postJson('/signed-contact', $data)->assertUnprocessable()->assertJsonValidationErrors('hp_website');
+    Event::assertDispatched(HoneypotDetected::class, fn ($event) => $event->reason === 'honeypot_filled'
+        && $event->fieldName === 'hp_website'
+        && $event->filledValue === 'https://spam.example');
+});
+
+test('a filled field_name still counts when the derived bait is empty', function () {
+    $data = [...derivedBaitForm(), 'hp_website' => 'spam'];
+    $this->travel(5)->seconds();
+
+    $this->postJson('/signed-contact', $data)->assertUnprocessable()->assertJsonValidationErrors('hp_website');
+});
+
+test('a bait name derived from another token is not accepted', function () {
+    $data = derivedBaitForm();
+    $other = derivedBaitForm();
+    $this->travel(5)->seconds();
+
+    $this->postJson('/signed-contact', ['hp_token' => $data['hp_token'], ...array_diff_key($other, ['hp_token' => true])])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('hp_website');
+});

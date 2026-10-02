@@ -1,5 +1,5 @@
 {{-- Anonymous honeypot component. Usage: <x-honeypot /> --}}
-{{-- With randomized field name: <x-honeypot :field-name="$hp_field_name" /> --}}
+{{-- In a HasHoneypot component the HTML name comes from hp_field_name; field-name overrides it. --}}
 @props(['fieldName' => null, 'errorKey' => null, 'nonce' => null])
 @php
     $honeypotComponent = isset($__livewire) && in_array(\Blendbyte\LivewireHoneypot\Traits\HasHoneypot::class, class_uses_recursive($__livewire), true)
@@ -10,7 +10,9 @@
     $cspNonce = $nonce ?? \Illuminate\Support\Facades\Vite::cspNonce();
     $staticFieldName = $honeypotComponent?->getHoneypotFieldName()
         ?? \Blendbyte\LivewireHoneypot\HoneypotConfig::get('field_name');
-    $displayName = $fieldName ?? $staticFieldName;
+    $displayName = $fieldName ?? (($honeypotComponent?->hp_field_name ?? '') ?: $staticFieldName);
+    // Visually hidden like screen-reader-only text, under a class that does not name the honeypot.
+    $wrapperClass = app(\Blendbyte\LivewireHoneypot\Services\HoneypotService::class)->wrapperClass();
     $modelAttributes = $attributes->whereStartsWith('wire:model');
     $errorKeys = [$errorKey ?? $modelAttributes->first() ?? $staticFieldName, 'hp_started_at', 'hp_token'];
     $errorMessage = null;
@@ -24,7 +26,7 @@
         }
     }
 @endphp
-<div class="hp-field" aria-hidden="true">
+<div class="{{ $wrapperClass }}" aria-hidden="true">
     <label>
         <span>{{ __('livewire-honeypot::validation.honeypot_label') }}</span>
         <input type="text"
@@ -54,13 +56,16 @@
     @endif
 
     <style @if($cspNonce !== null) nonce="{{ $cspNonce }}" @endif>
-        .hp-field {
+        .{{ $wrapperClass }} {
             position: absolute !important;
-            left: -10000px !important;
-            top: auto !important;
             width: 1px !important;
             height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
             overflow: hidden !important;
+            clip-path: inset(50%) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
         }
     </style>
 </div>

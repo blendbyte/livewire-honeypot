@@ -23,7 +23,7 @@ test('honeypot errors are visible outside the hidden wrapper', function () {
     $xpath = new DOMXPath($document);
 
     expect($xpath->query('//p[@class="hp-error" and @role="alert"]')->length)->toBe(1);
-    expect($xpath->query('//p[@role="alert"]/ancestor::*[@aria-hidden="true" or @class="hp-field"]')->length)->toBe(0);
+    expect($xpath->query('//p[@role="alert"]/ancestor::*[@aria-hidden="true"]')->length)->toBe(0);
     expect($html)->toContain('Form submitted too quickly.');
 });
 

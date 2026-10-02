@@ -47,11 +47,12 @@ for (const binding of ['default', 'custom', 'configured']) {
 
 test('a filled bait field from a component config override is rejected', async ({ page }) => {
     await page.goto('/configured');
-    const bait = page.locator('input[name="trap"]');
-    await expect(bait).toHaveAttribute('wire:model.lazy', 'trap');
+    // The HTML name is derived from the form token, so find the bait by its binding.
+    const bait = page.locator('input[wire\\:model\\.lazy="trap"]');
+    await expect(bait).toHaveAttribute('name', /^[a-z]+_[0-9a-f]{4}$/);
     await page.getByLabel('Email').fill('visitor@example.com');
-    // Make the offscreen input reachable for actual keyboard input.
-    await bait.evaluate(input => input.closest('.hp-field').classList.remove('hp-field'));
+    // Make the visually hidden input reachable for actual keyboard input.
+    await bait.evaluate(input => input.closest('[aria-hidden="true"]').removeAttribute('class'));
     await bait.fill('spam');
     await page.getByRole('button', { name: 'Submit', exact: true }).click();
     await expect(page.locator('.hp-error')).toHaveText('Spam detected.');

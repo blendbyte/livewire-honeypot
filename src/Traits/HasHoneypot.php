@@ -102,8 +102,9 @@ trait HasHoneypot
         // The Blade input key follows hp_token so Alpine runs again after a reset.
         $this->hp_js = '';
 
+        // Only the HTML name changes; the Livewire binding still targets the bait property.
         $this->hp_field_name = (bool) $this->getHoneypotConfig('randomize_field_name')
-            ? 'hp_' . Str::lower(Str::random(6))
+            ? app(HoneypotService::class)->baitName($this->hp_token)
             : $fieldName;
     }
 

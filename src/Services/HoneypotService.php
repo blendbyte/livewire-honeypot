@@ -15,6 +15,14 @@ use Illuminate\Support\Str;
 
 class HoneypotService
 {
+    /**
+     * Words for generated bait names. They read like ordinary form fields but avoid the names
+     * browsers and password managers autofill (name, email, url, website, company, ...).
+     */
+    private const array BAIT_WORDS = [
+        'reference', 'remarks', 'topic', 'occasion', 'referral', 'interest', 'preference', 'category',
+    ];
+
     protected static bool $fake = false;
 
     /**
@@ -128,6 +136,55 @@ class HoneypotService
         return hash_hmac('sha256', 'livewire-honeypot|' . $payload, $key);
     }
 
+    /**
+     * An inconspicuous bait name derived from a form token, such as "referral_3f9a".
+     * Plain forms can render it instead of field_name; validate() finds it again from the token.
+     */
+    public function baitName(string $token): string
+    {
+        return $this->baitNameWithKey($token, $this->signingKeys()[0]);
+    }
+
+    /**
+     * A class for the hidden wrapper that is stable per app but not recognisable as a honeypot.
+     */
+    public function wrapperClass(): string
+    {
+        return 'f' . substr($this->sign('wrapper', $this->signingKeys()[0]), 0, 8);
+    }
+
+    private function baitNameWithKey(string $token, string $key): string
+    {
+        $hash = $this->sign('bait|' . $token, $key);
+
+        return self::BAIT_WORDS[hexdec(substr($hash, 0, 2)) % count(self::BAIT_WORDS)] . '_' . substr($hash, 2, 4);
+    }
+
+    /**
+     * Read the bait from its derived name when the form rendered one, under any signing key.
+     * A filled field_name is kept, so rendering both names cannot hide a filled bait.
+     */
+    private function withDerivedBait(array $data, string $fieldName): array
+    {
+        $token = $data['hp_token'] ?? null;
+        $staticValue = Arr::get($data, $fieldName);
+
+        if (! is_string($token) || ($staticValue !== null && $staticValue !== '')) {
+            return $data;
+        }
+
+        foreach ($this->signingKeys() as $key) {
+            $baitName = $this->baitNameWithKey($token, $key);
+
+            if (array_key_exists($baitName, $data)) {
+                Arr::set($data, $fieldName, $data[$baitName]);
+                break;
+            }
+        }
+
+        return $data;
+    }
+
     public function validate(array $data, ?int $minimumSeconds = null): void
     {
         if (static::$fake) {
@@ -192,6 +249,8 @@ class HoneypotService
         $fieldName = HoneypotConfig::get('field_name');
         $minimumSeconds = $minimumSeconds ?? HoneypotConfig::get('minimum_fill_seconds');
         $now = now()->getTimestamp();
+
+        $data = $this->withDerivedBait($data, $fieldName);
 
         // Never trust a timestamp supplied separately by the client.
         $data['hp_started_at'] = $startedAt;

@@ -13,7 +13,7 @@ final class HoneypotConfig
         'field_name' => 'hp_website',
         'token_min_length' => 10,
         'token_length' => 24,
-        'randomize_field_name' => false,
+        'randomize_field_name' => true,
         'logging' => [
             'enabled' => false,
             'channel' => null,

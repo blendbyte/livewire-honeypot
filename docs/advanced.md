@@ -10,7 +10,7 @@ The component uses Laravel Vite's CSP nonce automatically, or accepts an explici
 
 Use the same nonce in your response's `style-src` policy, or `style-src-elem` when specified. The prop covers the honeypot's inline stylesheet only. Configure Livewire's own scripts and styles as well, and enable `livewire.csp_safe` when your policy prohibits `unsafe-eval`.
 
-For external stylesheets only, publish the view, move its `.hp-field` CSS into your application stylesheet, and remove the inline style block.
+The wrapper is hidden like screen-reader-only text, under a class derived from `APP_KEY` (such as `f3a91c07e`) rather than a recognizable honeypot name. For external stylesheets only, publish the view, give the wrapper a class of your own, move its CSS into your application stylesheet, and remove the inline style block.
 
 ## Errors and responders
 

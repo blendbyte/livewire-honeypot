@@ -1,5 +1,6 @@
 <?php
 
+use Blendbyte\LivewireHoneypot\Services\HoneypotService;
 use Blendbyte\LivewireHoneypot\Traits\HasHoneypot;
 use Livewire\Component;
 use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
@@ -248,17 +249,25 @@ test('hp_field_name is set on mount', function () {
     expect($component->hp_field_name)->toBeString()->not->toBeEmpty();
 });
 
-test('hp_field_name is randomized when randomize_field_name config is enabled', function () {
-    config(['livewire-honeypot.randomize_field_name' => true]);
+test('hp_field_name is randomized by default', function () {
+    $a = Livewire::test(TestComponent::class);
+    $b = Livewire::test(TestComponent::class);
 
-    $a = Livewire::test(TestComponent::class)->hp_field_name;
-    $b = Livewire::test(TestComponent::class)->hp_field_name;
+    expect($a->hp_field_name)->toMatch('/^[a-z]+_[0-9a-f]{4}$/')->not->toContain('hp');
+    // Derived from the form token, so two forms only share a name by chance
+    expect($a->hp_field_name)->toBe(app(HoneypotService::class)->baitName($a->hp_token))
+        ->not->toBe($b->hp_field_name);
+});
 
-    // Both should start with 'hp_' and be 9 chars (hp_ + 6 random chars)
-    expect($a)->toStartWith('hp_')->toHaveLength(9);
-    expect($b)->toStartWith('hp_')->toHaveLength(9);
-    // Statistically near-impossible for two random names to match
-    expect($a)->not->toBe($b);
+test('the default view renders the derived name but keeps the bait binding', function () {
+    config(['livewire-honeypot.minimum_fill_seconds' => 0]);
+
+    $component = Livewire::test(TestComponent::class);
+    $component->assertSeeHtml('name="' . $component->hp_field_name . '"')
+        ->assertSeeHtml('wire:model.lazy="hp_website"')
+        ->assertDontSeeHtml('name="hp_website"');
+
+    $component->set('hp_website', 'spam')->call('submit')->assertHasErrors(['hp_website' => 'size']);
 });
 
 test('hp_field_name is refreshed on resetHoneypot when randomization is enabled', function () {

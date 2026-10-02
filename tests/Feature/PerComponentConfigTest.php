@@ -74,8 +74,8 @@ test('component-level randomize_field_name generates random hp_field_name', func
     $a = Livewire::test(RandomizeFieldComponent::class)->hp_field_name;
     $b = Livewire::test(RandomizeFieldComponent::class)->hp_field_name;
 
-    expect($a)->toStartWith('hp_')->toHaveLength(9);
-    expect($b)->toStartWith('hp_')->toHaveLength(9);
+    expect($a)->toMatch('/^[a-z]+_[0-9a-f]{4}$/');
+    expect($b)->toMatch('/^[a-z]+_[0-9a-f]{4}$/');
     expect($a)->not->toBe($b);
 });
 
